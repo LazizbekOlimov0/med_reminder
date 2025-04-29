@@ -11,9 +11,13 @@ environment:
 
 
 dependencies:
+  font_awesome_flutter: ^10.8.0
   flutter:
     sdk: flutter
 
+  flutter_localizations:
+    sdk: flutter
+  intl: any
 
   cupertino_icons: ^1.0.8
   flutter_svg: ^2.1.0
@@ -32,4 +36,4 @@ flutter:
     - assets/images/
 
   uses-material-design: true
-
+  generate: true

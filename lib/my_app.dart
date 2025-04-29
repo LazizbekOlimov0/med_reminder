@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:med_reminder/screens/sign_screens/sign/sign_in.dart';
-import 'package:med_reminder/screens/sign_screens/sign/sign_up.dart';
+import 'package:med_reminder/screens/main_screen/add_page.dart';
 import 'package:med_reminder/screens/welcome.dart';
 
 class MyApp extends StatelessWidget {
@@ -10,7 +9,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: WelcomeScreen(),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+      ),
+      home: AddPage(),
     );
   }
 }

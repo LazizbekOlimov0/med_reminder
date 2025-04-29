@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:med_reminder/screens/main_screen/home_page.dart';
 import 'package:med_reminder/screens/sign_screens/sign/sign_in.dart';
 
 class SignUp extends StatefulWidget {
@@ -9,6 +10,10 @@ class SignUp extends StatefulWidget {
 }
 
 class _SignUpState extends State<SignUp> {
+
+  String name = "123";
+  String email = "123";
+  String password = "123";
 
   TextEditingController controllerName = TextEditingController();
   TextEditingController controllerEmail = TextEditingController();
@@ -103,7 +108,11 @@ class _SignUpState extends State<SignUp> {
                   ),
                 ),
                 MaterialButton(
-                  onPressed: (){},
+                  onPressed: (){
+                    if(controllerName.text == name && controllerEmail.text == email && controllerPassword.text == password){
+                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => HomePage()), (Route<dynamic> route) => false);
+                    }
+                  },
                   height: sizeHeight * 0.08,
                   minWidth: sizeWidth,
                   color: Colors.blueAccent.shade700,
