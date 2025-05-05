@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:med_reminder/screens/sign_screens/reset/get_code.dart';
 import 'package:med_reminder/screens/sign_screens/sign/sign_in.dart';
+import 'package:provider/provider.dart';
+
+import '../../../core/widgets/input_text_field.dart';
 
 class ForgotPassword extends StatefulWidget {
   const ForgotPassword({super.key});
@@ -36,28 +39,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: sizeHeight * 0.05)
                 ),
                 SizedBox(height: sizeHeight * 0.05),
-                TextField(
-                  controller: controllerEmail,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    focusColor: Colors.white,
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.grey, width: 2.0),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    border: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white, width: 2.0),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white, width: 2.0),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    hintText: 'Email address',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                  ),
-                ),
+                textField('Email address', controllerEmail),
                 MaterialButton(
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => GetCode())),
                   height: sizeHeight * 0.08,

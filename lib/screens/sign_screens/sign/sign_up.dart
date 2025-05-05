@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:med_reminder/core/widgets/input_text_field.dart';
 import 'package:med_reminder/screens/main_screen/home_page.dart';
 import 'package:med_reminder/screens/sign_screens/sign/sign_in.dart';
 
@@ -41,72 +42,9 @@ class _SignUpState extends State<SignUp> {
                 Text(" Registration",
                     style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: sizeHeight * 0.05)
                 ),
-                TextField(
-                  controller: controllerName,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    focusColor: Colors.white,
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.grey, width: 2.0),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    border: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white, width: 2.0),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white, width: 2.0),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    hintText: 'Name',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                  ),
-                ),
-                TextField(
-                  controller: controllerEmail,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    focusColor: Colors.white,
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.grey, width: 2.0),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    border: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white, width: 2.0),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white, width: 2.0),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    hintText: 'Email address',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                  ),
-                ),
-                TextField(
-                  controller: controllerPassword,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    focusColor: Colors.white,
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.grey, width: 2.0),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    border: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white, width: 2.0),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white, width: 2.0),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    hintText: 'Password',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                  ),
-                ),
+                textField("Name", controllerName),
+                textField('Email address', controllerEmail),
+                textField("Password", controllerPassword),
                 MaterialButton(
                   onPressed: (){
                     if(controllerName.text == name && controllerEmail.text == email && controllerPassword.text == password){

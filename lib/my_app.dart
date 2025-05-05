@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:med_reminder/screens/main_screen/add_page.dart';
+import 'package:med_reminder/screens/main_screen/profile_page.dart';
 import 'package:med_reminder/screens/welcome.dart';
 
 class MyApp extends StatelessWidget {
@@ -12,7 +13,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
-      home: AddPage(),
+      home: WelcomeScreen(),
     );
   }
 }

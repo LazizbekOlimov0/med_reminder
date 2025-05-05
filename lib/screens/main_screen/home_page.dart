@@ -11,34 +11,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   TextEditingController controllerSearch = TextEditingController();
 
-  late List _foundUsers = [];
-
-  @override
-  void initState() {
-    _foundUsers = [];
-    super.initState();
-  }
-
-  void _runFilter(String enteredKeyword) {
-    List result = [];
-    if (enteredKeyword.isEmpty) {
-      result = [];
-    } else {
-      result =
-          _foundUsers
-              .where(
-                (user) => user.lastName.toLowerCase().contains(
-                  enteredKeyword.toLowerCase(),
-                ),
-              )
-              .toList();
-    }
-
-    setState(() {
-      _foundUsers = result;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     double sizeHeight = MediaQuery.of(context).size.height;
@@ -89,7 +61,7 @@ class _HomePageState extends State<HomePage> {
                       borderSide: BorderSide(color: Colors.blue.shade300),
                     ),
                   ),
-                  onChanged: (value) => _runFilter(value),
+                  onChanged: (value){},
                   controller: controllerSearch,
                   cursorColor: Colors.grey.shade900,
                 ),
