@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:med_reminder/controllers/auth_controller.dart';
 import 'package:med_reminder/screens/sign_screens/reset/forgot_password.dart';
 
 import '../../../core/widgets/input_text_field.dart';
+import '../../main_screen/home_page.dart';
 
 class SignIn extends StatefulWidget {
   const SignIn({super.key});
@@ -14,6 +16,7 @@ class _SignInState extends State<SignIn> {
 
   TextEditingController controllerEmail = TextEditingController();
   TextEditingController controllerPassword = TextEditingController();
+  final authController = AuthController();
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +43,16 @@ class _SignInState extends State<SignIn> {
                 textField('Email address', controllerEmail),
                 textField("Password", controllerPassword),
                 MaterialButton(
-                  onPressed: (){},
+                  onPressed: () async{
+                    final success = await authController.login(
+                        context,
+                        controllerEmail.text,
+                        controllerPassword.text,
+                    );
+                    if(success){
+                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => HomePage()), (Route<dynamic> route) => false);
+                    }
+                  },
                   height: sizeHeight * 0.08,
                   minWidth: sizeWidth,
                   color: Colors.blueAccent.shade700,
@@ -60,7 +72,7 @@ class _SignInState extends State<SignIn> {
                     ),
                     SizedBox(width: 10),
                   ],
-                )
+                ),
               ],
             ),
           ),

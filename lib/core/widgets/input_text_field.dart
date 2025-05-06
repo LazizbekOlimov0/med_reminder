@@ -1,9 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 textField(String text, TextEditingController controller){
   return TextField(
     controller: controller,
+    obscureText: (text == "Password") ? true : false,
     decoration: InputDecoration(
       filled: true,
       fillColor: Colors.white,
