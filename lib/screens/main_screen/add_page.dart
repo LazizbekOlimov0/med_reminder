@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/widgets/bottom_nav_bar.dart';
 import 'package:intl/intl.dart';
 
 class AddPage extends StatefulWidget {
@@ -15,10 +14,9 @@ class _AddPageState extends State<AddPage> {
   TextEditingController controllerStrength = TextEditingController();
   TextEditingController controllerNotes = TextEditingController();
 
-
   TimeOfDay? selectedTime;
 
-  String getFormatTime(){
+  String getFormatTime() {
     if (selectedTime == null) {
       return 'First Dose Time';
     }
@@ -41,16 +39,13 @@ class _AddPageState extends State<AddPage> {
               dialBackgroundColor: Colors.blue.shade100,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.blue,
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.blue),
             ),
           ),
           child: child!,
         );
       },
     );
-
 
     if (pickedTime != null && pickedTime != selectedTime) {
       setState(() {
@@ -64,9 +59,9 @@ class _AddPageState extends State<AddPage> {
     int minutesSinceMidnight = timeToSave.hour * 60 + timeToSave.minute;
   }
 
-
   DateTime? selectedDateStart;
   DateTime? selectedDateEnd;
+
   String getFormattedDateStart() {
     if (selectedDateStart == null) {
       return 'Dose Start Date  ';
@@ -98,9 +93,7 @@ class _AddPageState extends State<AddPage> {
               onSurface: Colors.black,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.blue,
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.blue),
             ),
           ),
           child: child!,
@@ -111,8 +104,6 @@ class _AddPageState extends State<AddPage> {
     if (pickedDate != null && pickedDate != selectedDateStart) {
       setState(() {
         selectedDateStart = pickedDate;
-
-        // Save the selected date
         _saveDateToStorage(pickedDate);
       });
     }
@@ -135,9 +126,7 @@ class _AddPageState extends State<AddPage> {
               onSurface: Colors.black,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.blue,
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.blue),
             ),
           ),
           child: child!,
@@ -158,10 +147,6 @@ class _AddPageState extends State<AddPage> {
   void _saveDateToStorage(DateTime dateToSave) {
     final int timestamp = dateToSave.millisecondsSinceEpoch;
   }
-
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -341,7 +326,10 @@ class _AddPageState extends State<AddPage> {
                               SizedBox(width: 1),
                               Text(
                                 getFormatTime(),
-                                style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
+                                style: TextStyle(
+                                  color: Colors.grey.shade700,
+                                  fontSize: 16,
+                                ),
                               ),
                               Icon(Icons.access_time, color: Colors.grey),
                             ],
@@ -481,9 +469,9 @@ class _AddPageState extends State<AddPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     MaterialButton(
-                      onPressed: ()=> _selectDateStart(context),
+                      onPressed: () => _selectDateStart(context),
                       height: sizeHeight * 0.08,
-                      minWidth: sizeWidth * 0.44,
+                      minWidth: sizeWidth * 0.4,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                         side: BorderSide(color: Colors.blue.shade200),
@@ -500,9 +488,9 @@ class _AddPageState extends State<AddPage> {
                       ),
                     ),
                     MaterialButton(
-                      onPressed: ()=> _selectDateEnd(context),
+                      onPressed: () => _selectDateEnd(context),
                       height: sizeHeight * 0.08,
-                      minWidth: sizeWidth * 0.44,
+                      minWidth: sizeWidth * 0.4,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                         side: BorderSide(color: Colors.blue.shade200),
@@ -570,7 +558,6 @@ class _AddPageState extends State<AddPage> {
           ),
         ),
       ),
-      bottomNavigationBar: bottomNavigationBar(1, context),
     );
   }
 }

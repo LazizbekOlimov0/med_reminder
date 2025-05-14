@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:med_reminder/screens/sign_screens/sign/sign_in.dart';
 import 'package:med_reminder/screens/sign_screens/sign/sign_up.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -10,7 +9,6 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -24,17 +22,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       transitionDuration: Duration(milliseconds: 1000),
       pageBuilder: (context, animation, secondaryAnimation) => SignUp(),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(
-          opacity: animation,
-          child: child,
-        );
+        return FadeTransition(opacity: animation, child: child);
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-
     double sizeHeight = MediaQuery.of(context).size.height;
     double sizeWidth = MediaQuery.of(context).size.width;
 
@@ -49,7 +43,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               SizedBox(
                 height: sizeHeight,
                 width: sizeWidth,
-                child: Image(image: AssetImage("assets/images/img.png"),fit: BoxFit.cover),
+                child: Image(
+                  image: AssetImage("assets/images/img.png"),
+                  fit: BoxFit.cover,
+                ),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -58,8 +55,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Text("Med",
-                          style: TextStyle(color: Colors.blue.shade900, fontSize: sizeHeight * 0.08, fontWeight: FontWeight.bold)
+                      Text(
+                        "Med",
+                        style: TextStyle(
+                          color: Colors.blue.shade900,
+                          fontSize: sizeHeight * 0.08,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       SizedBox(width: 10),
                     ],
@@ -68,13 +70,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       SizedBox(width: 10),
-                      Text("Reminder",
-                          style: TextStyle(color: Colors.blue.shade900, fontSize: sizeHeight * 0.08, fontWeight: FontWeight.bold)
+                      Text(
+                        "Reminder",
+                        style: TextStyle(
+                          color: Colors.blue.shade900,
+                          fontSize: sizeHeight * 0.08,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
-                  )
+                  ),
                 ],
-              )
+              ),
             ],
           ),
         ),

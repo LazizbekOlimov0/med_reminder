@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:med_reminder/core/widgets/input_text_field.dart';
-import 'package:med_reminder/screens/main_screen/home_page.dart';
-import 'package:med_reminder/screens/sign_screens/sign/sign_in.dart';
 
 class SignUp extends StatefulWidget {
   const SignUp({super.key});
@@ -11,7 +10,6 @@ class SignUp extends StatefulWidget {
 }
 
 class _SignUpState extends State<SignUp> {
-
   String name = "123";
   String email = "123";
   String password = "123";
@@ -22,7 +20,6 @@ class _SignUpState extends State<SignUp> {
 
   @override
   Widget build(BuildContext context) {
-
     double sizeHeight = MediaQuery.of(context).size.height;
     double sizeWidth = MediaQuery.of(context).size.width;
 
@@ -39,16 +36,23 @@ class _SignUpState extends State<SignUp> {
               mainAxisAlignment: MainAxisAlignment.center,
               spacing: 20,
               children: [
-                Text(" Registration",
-                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: sizeHeight * 0.05)
+                Text(
+                  " Registration",
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: sizeHeight * 0.05,
+                  ),
                 ),
                 textField("Name", controllerName),
                 textField('Email address', controllerEmail),
                 textField("Password", controllerPassword),
                 MaterialButton(
-                  onPressed: (){
-                    if(controllerName.text == name && controllerEmail.text == email && controllerPassword.text == password){
-                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => HomePage()), (Route<dynamic> route) => false);
+                  onPressed: () {
+                    if (controllerName.text == name &&
+                        controllerEmail.text == email &&
+                        controllerPassword.text == password) {
+                      context.go('/home');
                     }
                   },
                   height: sizeHeight * 0.08,
@@ -58,18 +62,28 @@ class _SignUpState extends State<SignUp> {
                     borderRadius: BorderRadius.circular(30),
                     side: BorderSide(width: 2, color: Colors.blue.shade700),
                   ),
-                  child: Text("Save", style: TextStyle(color: Colors.white, fontSize: 18)),
+                  child: Text(
+                    "Save",
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     SizedBox(width: 10),
                     TextButton(
-                      onPressed: () => Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => SignIn()), (Route<dynamic> route) => false),
-                      child: Text("Log in  ", style: TextStyle(color: Colors.blue.shade800, fontWeight: FontWeight.bold, fontSize: 16)),
+                      onPressed: () => context.go('/signIn'),
+                      child: Text(
+                        "Log in  ",
+                        style: TextStyle(
+                          color: Colors.blue.shade800,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),

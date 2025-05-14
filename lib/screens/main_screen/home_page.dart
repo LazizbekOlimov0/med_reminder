@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:med_reminder/core/widgets/bottom_nav_bar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -51,17 +50,14 @@ class _HomePageState extends State<HomePage> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide(
-                        color: Colors.blue,
-                        width: 2,
-                      ),
+                      borderSide: BorderSide(color: Colors.blue, width: 2),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
                       borderSide: BorderSide(color: Colors.blue.shade300),
                     ),
                   ),
-                  onChanged: (value){},
+                  onChanged: (value) {},
                   controller: controllerSearch,
                   cursorColor: Colors.grey.shade900,
                 ),
@@ -155,7 +151,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-      bottomNavigationBar: bottomNavigationBar(0, context)
     );
   }
 }

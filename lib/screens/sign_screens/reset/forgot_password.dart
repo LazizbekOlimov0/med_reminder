@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:med_reminder/screens/sign_screens/reset/get_code.dart';
-import 'package:med_reminder/screens/sign_screens/sign/sign_in.dart';
-import 'package:provider/provider.dart';
-
+import 'package:go_router/go_router.dart';
 import '../../../core/widgets/input_text_field.dart';
 
 class ForgotPassword extends StatefulWidget {
@@ -13,12 +10,10 @@ class ForgotPassword extends StatefulWidget {
 }
 
 class _ForgotPasswordState extends State<ForgotPassword> {
-
   TextEditingController controllerEmail = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-
     double sizeHeight = MediaQuery.of(context).size.height;
     double sizeWidth = MediaQuery.of(context).size.width;
 
@@ -35,13 +30,19 @@ class _ForgotPasswordState extends State<ForgotPassword> {
               mainAxisAlignment: MainAxisAlignment.center,
               spacing: 20,
               children: [
-                Text(" Forgot Password",
-                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: sizeHeight * 0.05)
+                Text(
+                  " Forgot Password",
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: sizeHeight * 0.05,
+                  ),
                 ),
                 SizedBox(height: sizeHeight * 0.05),
                 textField('Email address', controllerEmail),
                 MaterialButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => GetCode())),
+                  onPressed:
+                      () => context.go('/signIn/forgotPassword/getCode'),
                   height: sizeHeight * 0.08,
                   minWidth: sizeWidth,
                   color: Colors.blueAccent.shade700,
@@ -49,7 +50,10 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     borderRadius: BorderRadius.circular(30),
                     side: BorderSide(width: 2, color: Colors.blue.shade700),
                   ),
-                  child: Text("Get code", style: TextStyle(color: Colors.white, fontSize: 18)),
+                  child: Text(
+                    "Get code",
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
                 ),
               ],
             ),

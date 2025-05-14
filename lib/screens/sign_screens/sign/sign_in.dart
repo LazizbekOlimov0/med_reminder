@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:med_reminder/controllers/auth_controller.dart';
-import 'package:med_reminder/screens/sign_screens/reset/forgot_password.dart';
-
 import '../../../core/widgets/input_text_field.dart';
-import '../../main_screen/home_page.dart';
 
 class SignIn extends StatefulWidget {
   const SignIn({super.key});
@@ -13,14 +11,12 @@ class SignIn extends StatefulWidget {
 }
 
 class _SignInState extends State<SignIn> {
-
   TextEditingController controllerEmail = TextEditingController();
   TextEditingController controllerPassword = TextEditingController();
   final authController = AuthController();
 
   @override
   Widget build(BuildContext context) {
-
     double sizeHeight = MediaQuery.of(context).size.height;
     double sizeWidth = MediaQuery.of(context).size.width;
 
@@ -37,20 +33,25 @@ class _SignInState extends State<SignIn> {
               mainAxisAlignment: MainAxisAlignment.center,
               spacing: 20,
               children: [
-                Text(" Log in",
-                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: sizeHeight * 0.05)
+                Text(
+                  " Log in",
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: sizeHeight * 0.05,
+                  ),
                 ),
                 textField('Email address', controllerEmail),
                 textField("Password", controllerPassword),
                 MaterialButton(
-                  onPressed: () async{
+                  onPressed: () async {
                     final success = await authController.login(
-                        context,
-                        controllerEmail.text,
-                        controllerPassword.text,
+                      context,
+                      controllerEmail.text,
+                      controllerPassword.text,
                     );
-                    if(success){
-                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => HomePage()), (Route<dynamic> route) => false);
+                    if (success) {
+                      context.go('/home');
                     }
                   },
                   height: sizeHeight * 0.08,
@@ -60,15 +61,25 @@ class _SignInState extends State<SignIn> {
                     borderRadius: BorderRadius.circular(30),
                     side: BorderSide(width: 2, color: Colors.blue.shade700),
                   ),
-                  child: Text("Log in", style: TextStyle(color: Colors.white, fontSize: 18)),
+                  child: Text(
+                    "Log in",
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     SizedBox(width: 10),
                     TextButton(
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ForgotPassword())),
-                        child: Text("Forgot password?", style: TextStyle(color: Colors.blue.shade800, fontWeight: FontWeight.bold)),
+                      onPressed:
+                          () => context.go('/signIn/forgotPassword'),
+                      child: Text(
+                        "Forgot password?",
+                        style: TextStyle(
+                          color: Colors.blue.shade800,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     SizedBox(width: 10),
                   ],

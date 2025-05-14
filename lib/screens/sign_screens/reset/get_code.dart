@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:med_reminder/screens/sign_screens/sign/sign_in.dart';
-
+import 'package:go_router/go_router.dart';
 import '../../../core/widgets/input_text_field.dart';
 
 class GetCode extends StatefulWidget {
@@ -11,14 +10,12 @@ class GetCode extends StatefulWidget {
 }
 
 class _GetCodeState extends State<GetCode> {
-
   TextEditingController controllerGetCode = TextEditingController();
   TextEditingController controllerNewPassword = TextEditingController();
   TextEditingController controllerConfirmPassword = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-
     double sizeHeight = MediaQuery.of(context).size.height;
     double sizeWidth = MediaQuery.of(context).size.width;
 
@@ -35,15 +32,20 @@ class _GetCodeState extends State<GetCode> {
               mainAxisAlignment: MainAxisAlignment.center,
               spacing: 20,
               children: [
-                Text(" Get code",
-                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: sizeHeight * 0.05)
+                Text(
+                  " Get code",
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: sizeHeight * 0.05,
+                  ),
                 ),
                 SizedBox(height: sizeHeight * 0.05),
                 textField("Code", controllerGetCode),
                 textField("New Password", controllerNewPassword),
                 textField("Confirm Password", controllerConfirmPassword),
                 MaterialButton(
-                  onPressed: () => Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => SignIn()), (Route<dynamic> route) => false),
+                  onPressed: () => context.go('/signIn'),
                   height: sizeHeight * 0.08,
                   minWidth: sizeWidth,
                   color: Colors.blueAccent.shade700,
@@ -51,7 +53,10 @@ class _GetCodeState extends State<GetCode> {
                     borderRadius: BorderRadius.circular(30),
                     side: BorderSide(width: 2, color: Colors.blue.shade700),
                   ),
-                  child: Text("Save password", style: TextStyle(color: Colors.white, fontSize: 18)),
+                  child: Text(
+                    "Save password",
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
                 ),
               ],
             ),
