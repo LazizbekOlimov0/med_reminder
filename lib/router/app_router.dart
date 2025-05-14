@@ -16,6 +16,7 @@ class AppRouter {
   static final GlobalKey<NavigatorState> shellNavigatorKey = GlobalKey();
 
   static final router = GoRouter(
+    navigatorKey: rootNavigatorKey,
     routes: [
       GoRoute(
         path: '/',
@@ -61,14 +62,17 @@ class AppRouter {
         routes: [
           GoRoute(
             path: '/home',
+            name: 'home',
             builder: (BuildContext context, GoRouterState state) => HomePage(),
           ),
           GoRoute(
             path: '/add',
+            name: 'add',
             builder: (BuildContext context, GoRouterState state) => AddPage(),
           ),
           GoRoute(
             path: '/profile',
+            name: 'profile',
             builder:
                 (BuildContext context, GoRouterState state) => ProfilePage(),
           ),

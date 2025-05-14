@@ -52,7 +52,7 @@ class _SignUpState extends State<SignUp> {
                     if (controllerName.text == name &&
                         controllerEmail.text == email &&
                         controllerPassword.text == password) {
-                      context.go('/home');
+                      context.goNamed('home');
                     }
                   },
                   height: sizeHeight * 0.08,
