@@ -46,7 +46,6 @@ class AppRouter {
       ),
       ShellRoute(
         navigatorKey: shellNavigatorKey,
-        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state, child) {
           return Main(
             currentIndex: switch (state.uri.path) {
