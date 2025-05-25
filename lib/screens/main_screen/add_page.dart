@@ -15,6 +15,9 @@ class _AddPageState extends State<AddPage> {
   TextEditingController controllerNotes = TextEditingController();
 
   TimeOfDay? selectedTime;
+  String? selectedMedicationType;
+  String? selectedFrequency;
+  String? selectedDuration;
 
   String getFormatTime() {
     if (selectedTime == null) {
@@ -32,14 +35,16 @@ class _AddPageState extends State<AddPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             timePickerTheme: TimePickerThemeData(
-              backgroundColor: Colors.white,
-              hourMinuteTextColor: Colors.blue,
-              dayPeriodTextColor: Colors.blue,
-              dialHandColor: Colors.blue,
-              dialBackgroundColor: Colors.blue.shade100,
+              backgroundColor: Color(0xFF1E293B),
+              hourMinuteTextColor: Color(0xFF06B6D4),
+              dayPeriodTextColor: Color(0xFF06B6D4),
+              dialHandColor: Color(0xFF06B6D4),
+              dialBackgroundColor: Color(0xFF334155),
+              hourMinuteTextStyle: TextStyle(color: Colors.white),
+              dayPeriodTextStyle: TextStyle(color: Colors.white),
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: Colors.blue),
+              style: TextButton.styleFrom(foregroundColor: Color(0xFF06B6D4)),
             ),
           ),
           child: child!,
@@ -64,16 +69,16 @@ class _AddPageState extends State<AddPage> {
 
   String getFormattedDateStart() {
     if (selectedDateStart == null) {
-      return 'Dose Start Date  ';
+      return 'Dose Start Date';
     }
-    return DateFormat('EEEE, MMMM d, yyyy').format(selectedDateStart!);
+    return DateFormat('dd.MM.yyyy').format(selectedDateStart!);
   }
 
   String getFormattedDateEnd() {
     if (selectedDateEnd == null) {
-      return 'Dose End Date  ';
+      return 'Dose End Date';
     }
-    return DateFormat('EEEE, MMMM d, yyyy').format(selectedDateEnd!);
+    return DateFormat('dd.MM.yyyy').format(selectedDateEnd!);
   }
 
   Future<void> _selectDateStart(BuildContext context) async {
@@ -83,17 +88,17 @@ class _AddPageState extends State<AddPage> {
       initialDate: selectedDateStart ?? currentDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
-
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Colors.blue,
+            colorScheme: ColorScheme.dark(
+              primary: Color(0xFF06B6D4),
               onPrimary: Colors.white,
-              onSurface: Colors.black,
+              surface: Color(0xFF1E293B),
+              onSurface: Colors.white,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: Colors.blue),
+              style: TextButton.styleFrom(foregroundColor: Color(0xFF06B6D4)),
             ),
           ),
           child: child!,
@@ -116,17 +121,17 @@ class _AddPageState extends State<AddPage> {
       initialDate: selectedDateEnd ?? currentDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
-
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Colors.blue,
+            colorScheme: ColorScheme.dark(
+              primary: Color(0xFF06B6D4),
               onPrimary: Colors.white,
-              onSurface: Colors.black,
+              surface: Color(0xFF1E293B),
+              onSurface: Colors.white,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: Colors.blue),
+              style: TextButton.styleFrom(foregroundColor: Color(0xFF06B6D4)),
             ),
           ),
           child: child!,
@@ -137,8 +142,6 @@ class _AddPageState extends State<AddPage> {
     if (pickedDate != null && pickedDate != selectedDateEnd) {
       setState(() {
         selectedDateEnd = pickedDate;
-
-        // Save the selected date
         _saveDateToStorage(pickedDate);
       });
     }
@@ -148,413 +151,466 @@ class _AddPageState extends State<AddPage> {
     final int timestamp = dateToSave.millisecondsSinceEpoch;
   }
 
+  Widget _buildInputDecoration({
+    required Widget child,
+    required String label,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1E293B), Color(0xFF334155)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 8,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     double sizeHeight = MediaQuery.of(context).size.height;
     double sizeWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
+      backgroundColor: Color(0xFF0F172A),
       appBar: AppBar(
+        backgroundColor: Color(0xFF1E293B),
+        elevation: 0,
         title: Text(
           "Add Medicine",
           style: TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 20,
-            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(24),
-          child: SizedBox(
-            height: sizeHeight,
-            width: sizeWidth,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: DropdownMenu(
-                          hintText: 'Medication Type',
-                          onSelected: (value) {},
-                          width: sizeWidth * 0.44,
-                          dropdownMenuEntries: [
-                            DropdownMenuEntry(value: 'tablet', label: 'Tablet'),
-                            DropdownMenuEntry(value: 'liquid', label: 'Liquid'),
-                            DropdownMenuEntry(
-                              value: 'injection',
-                              label: 'Injection',
-                            ),
-                            DropdownMenuEntry(value: 'drops', label: 'Drops'),
-                            DropdownMenuEntry(value: 'spray', label: 'Spray'),
-                          ],
-                          textStyle: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 16,
-                          ),
-                          inputDecorationTheme: InputDecorationTheme(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(
-                                color: Colors.blue,
-                                width: 2,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: const BorderSide(
-                                color: Colors.blue,
-                                width: 2,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: BorderSide(
-                                color: Colors.blue.shade200,
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                        ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with gradient line
+              Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF06B6D4), Color(0xFF8B5CF6)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
                       ),
-                    ),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: TextField(
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: Colors.white,
-                            hintText: "How much days?",
-                            hintStyle: TextStyle(color: Colors.grey),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: BorderSide(
-                                color: Colors.blue.shade200,
-                                width: 2,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: BorderSide(
-                                color: Colors.blue.shade200,
-                              ),
-                            ),
-                          ),
-                          onChanged: (value) {},
-                          controller: controllerDayCount,
-                          cursorColor: Colors.blue.shade200,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 30),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: DropdownMenu(
-                          hintText: 'Frequency',
-                          onSelected: (value) {},
-                          width: sizeWidth * 0.44,
-                          dropdownMenuEntries: [],
-                          textStyle: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 16,
-                          ),
-                          inputDecorationTheme: InputDecorationTheme(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(
-                                color: Colors.blue,
-                                width: 2,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: const BorderSide(
-                                color: Colors.blue,
-                                width: 2,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: BorderSide(
-                                color: Colors.blue.shade200,
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: MaterialButton(
-                          onPressed: () => _selectTime(context),
-                          height: sizeHeight * 0.08,
-                          minWidth: sizeWidth * 0.44,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            side: BorderSide(color: Colors.blue.shade200),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              SizedBox(width: 1),
-                              Text(
-                                getFormatTime(),
-                                style: TextStyle(
-                                  color: Colors.grey.shade700,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              Icon(Icons.access_time, color: Colors.grey),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 30),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: DropdownMenu(
-                          hintText: 'Duration',
-                          onSelected: (value) {},
-                          width: sizeWidth * 0.44,
-                          dropdownMenuEntries: [
-                            DropdownMenuEntry(
-                              value: 'morning',
-                              label: 'Morning',
-                            ),
-                            DropdownMenuEntry(
-                              value: 'evening',
-                              label: 'Evening',
-                            ),
-                            DropdownMenuEntry(value: 'night', label: 'Night'),
-                          ],
-                          textStyle: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 16,
-                          ),
-                          inputDecorationTheme: InputDecorationTheme(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(
-                                color: Colors.blue,
-                                width: 2,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: const BorderSide(
-                                color: Colors.blue,
-                                width: 2,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: BorderSide(
-                                color: Colors.blue.shade200,
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: TextField(
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: Colors.white,
-                            hintText: "strength",
-                            hintStyle: TextStyle(color: Colors.grey),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: BorderSide(
-                                color: Colors.blue.shade200,
-                                width: 2,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: BorderSide(
-                                color: Colors.blue.shade200,
-                              ),
-                            ),
-                          ),
-                          onChanged: (value) {},
-                          controller: controllerStrength,
-                          cursorColor: Colors.blue.shade200,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 30),
-                Text(
-                  "Medicine",
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
-                  ),
-                ),
-                SizedBox(height: 30),
-                TextField(
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    hintText: "Medication Name",
-                    hintStyle: TextStyle(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide(
-                        color: Colors.blue.shade200,
-                        width: 2,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide(color: Colors.blue.shade200),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  onChanged: (value) {},
-                  controller: controllerMedicineName,
-                  cursorColor: Colors.blue.shade200,
-                ),
-                SizedBox(height: 30),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    MaterialButton(
-                      onPressed: () => _selectDateStart(context),
-                      height: sizeHeight * 0.08,
-                      minWidth: sizeWidth * 0.4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        side: BorderSide(color: Colors.blue.shade200),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            getFormattedDateStart(),
-                            style: TextStyle(color: Colors.grey.shade700),
-                          ),
-                          Icon(Icons.date_range, color: Colors.grey),
-                        ],
-                      ),
-                    ),
-                    MaterialButton(
-                      onPressed: () => _selectDateEnd(context),
-                      height: sizeHeight * 0.08,
-                      minWidth: sizeWidth * 0.4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        side: BorderSide(color: Colors.blue.shade200),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            getFormattedDateEnd(),
-                            style: TextStyle(color: Colors.grey.shade700),
-                          ),
-                          Icon(Icons.date_range, color: Colors.grey),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
-                TextField(
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    hintText: "Notes",
-                    hintStyle: TextStyle(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(
-                        color: Colors.blue.shade200,
-                        width: 2,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Colors.blue.shade200),
-                    ),
-                  ),
-                  onChanged: (value) {},
-                  controller: controllerNotes,
-                  cursorColor: Colors.blue.shade200,
-                ),
-                SizedBox(height: 30),
-                MaterialButton(
-                  onPressed: () {},
-                  height: sizeHeight * 0.08,
-                  minWidth: sizeWidth,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    side: BorderSide(color: Colors.blue.shade200),
-                  ),
-                  color: Colors.blueAccent.shade700,
-                  child: Text(
-                    "Add",
+                  SizedBox(width: 12),
+                  Text(
+                    "Medicine Details",
                     style: TextStyle(
+                      fontSize: 20,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 20,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 30),
+
+              // First Row - Medication Type & Day Count
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInputDecoration(
+                      label: "Medication Type",
+                      child: Theme(
+                        data: Theme.of(context).copyWith(
+                          canvasColor: Color(0xFF1E293B),
+                        ),
+                        child: DropdownButtonFormField<String>(
+                          value: selectedMedicationType,
+                          hint: Text(
+                            'Select Type',
+                            style: TextStyle(color: Colors.grey.shade400),
+                          ),
+                          dropdownColor: Color(0xFF1E293B),
+                          style: TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                          ),
+                          items: [
+                            DropdownMenuItem(value: 'tablet', child: Text('💊 Tablet')),
+                            DropdownMenuItem(value: 'liquid', child: Text('🧪 Liquid')),
+                            DropdownMenuItem(value: 'injection', child: Text('💉 Injection')),
+                            DropdownMenuItem(value: 'drops', child: Text('💧 Drops')),
+                            DropdownMenuItem(value: 'spray', child: Text('🌬️ Spray')),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              selectedMedicationType = value;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: _buildInputDecoration(
+                      label: "Duration (Days)",
+                      child: TextField(
+                        controller: controllerDayCount,
+                        style: TextStyle(color: Colors.white),
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          hintText: "e.g., 7",
+                          hintStyle: TextStyle(color: Colors.grey.shade400),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF06B6D4)),
+                        ),
+                        cursorColor: Color(0xFF06B6D4),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 24),
+
+              // Second Row - Frequency & Time
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInputDecoration(
+                      label: "Frequency",
+                      child: Theme(
+                        data: Theme.of(context).copyWith(
+                          canvasColor: Color(0xFF1E293B),
+                        ),
+                        child: DropdownButtonFormField<String>(
+                          value: selectedFrequency,
+                          hint: Text(
+                            'Select Frequency',
+                            style: TextStyle(color: Colors.grey.shade400),
+                          ),
+                          dropdownColor: Color(0xFF1E293B),
+                          style: TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                          ),
+                          items: [
+                            DropdownMenuItem(value: 'once', child: Text('Once daily')),
+                            DropdownMenuItem(value: 'twice', child: Text('Twice daily')),
+                            DropdownMenuItem(value: 'thrice', child: Text('Thrice daily')),
+                            DropdownMenuItem(value: 'four', child: Text('Four times daily')),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              selectedFrequency = value;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: _buildInputDecoration(
+                      label: "First Dose Time",
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _selectTime(context),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  getFormatTime(),
+                                  style: TextStyle(
+                                    color: selectedTime != null ? Colors.white : Colors.grey.shade400,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Icon(Icons.access_time, color: Color(0xFF06B6D4)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 24),
+
+              // Third Row - Duration & Strength
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInputDecoration(
+                      label: "Taking Time",
+                      child: Theme(
+                        data: Theme.of(context).copyWith(
+                          canvasColor: Color(0xFF1E293B),
+                        ),
+                        child: DropdownButtonFormField<String>(
+                          value: selectedDuration,
+                          hint: Text(
+                            'Select Time',
+                            style: TextStyle(color: Colors.grey.shade400),
+                          ),
+                          dropdownColor: Color(0xFF1E293B),
+                          style: TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                          ),
+                          items: [
+                            DropdownMenuItem(value: 'morning', child: Text('🌅 Morning')),
+                            DropdownMenuItem(value: 'afternoon', child: Text('☀️ Afternoon')),
+                            DropdownMenuItem(value: 'evening', child: Text('🌆 Evening')),
+                            DropdownMenuItem(value: 'night', child: Text('🌙 Night')),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              selectedDuration = value;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: _buildInputDecoration(
+                      label: "Strength/Dose",
+                      child: TextField(
+                        controller: controllerStrength,
+                        style: TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: "e.g., 500mg",
+                          hintStyle: TextStyle(color: Colors.grey.shade400),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          prefixIcon: Icon(Icons.medication, color: Color(0xFF10B981)),
+                        ),
+                        cursorColor: Color(0xFF10B981),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 32),
+
+              // Medicine Name
+              _buildInputDecoration(
+                label: "Medicine Name",
+                child: TextField(
+                  controller: controllerMedicineName,
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  decoration: InputDecoration(
+                    hintText: "Enter medicine name",
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.transparent,
+                    prefixIcon: Icon(Icons.local_pharmacy, color: Color(0xFF8B5CF6)),
+                  ),
+                  cursorColor: Color(0xFF8B5CF6),
+                ),
+              ),
+              SizedBox(height: 24),
+
+              // Date Selection
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInputDecoration(
+                      label: "Start Date",
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _selectDateStart(context),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: EdgeInsets.all(16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  getFormattedDateStart(),
+                                  style: TextStyle(
+                                    color: selectedDateStart != null ? Colors.white : Colors.grey.shade400,
+                                  ),
+                                ),
+                                Icon(Icons.date_range, color: Color(0xFF06B6D4)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: _buildInputDecoration(
+                      label: "End Date",
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _selectDateEnd(context),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: EdgeInsets.all(16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  getFormattedDateEnd(),
+                                  style: TextStyle(
+                                    color: selectedDateEnd != null ? Colors.white : Colors.grey.shade400,
+                                  ),
+                                ),
+                                Icon(Icons.date_range, color: Color(0xFF06B6D4)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 24),
+
+              // Notes
+              _buildInputDecoration(
+                label: "Additional Notes",
+                child: TextField(
+                  controller: controllerNotes,
+                  style: TextStyle(color: Colors.white),
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: "Any special instructions or notes...",
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.transparent,
+                  ),
+                  cursorColor: Color(0xFF06B6D4),
+                ),
+              ),
+              SizedBox(height: 40),
+
+              // Add Button
+              Container(
+                width: double.infinity,
+                height: 60,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF06B6D4), Color(0xFF0891B2)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0xFF06B6D4).withOpacity(0.4),
+                      blurRadius: 15,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      // Add medicine logic here
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_circle_outline, color: Colors.white, size: 24),
+                          SizedBox(width: 12),
+                          Text(
+                            "Add Medicine",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              SizedBox(height: 30),
+            ],
           ),
         ),
       ),
