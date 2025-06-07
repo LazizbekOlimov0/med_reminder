@@ -4,10 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:med_reminder/screens/main_screen/add_page.dart';
 import 'package:med_reminder/screens/main_screen/home_page.dart';
 import 'package:med_reminder/screens/main_screen/profile_page.dart';
-import 'package:med_reminder/screens/sign_screens/reset/forgot_password.dart';
-import 'package:med_reminder/screens/sign_screens/reset/get_code.dart';
-import 'package:med_reminder/screens/sign_screens/sign/sign_in.dart';
-import 'package:med_reminder/screens/sign_screens/sign/sign_up.dart';
+import 'package:med_reminder/screens/welcome.dart';
 
 import '../core/widgets/bottom_nav_bar.dart';
 
@@ -20,29 +17,7 @@ class AppRouter {
     routes: [
       GoRoute(
         path: '/',
-        builder: (BuildContext context, GoRouterState state) => SignUp(),
-        routes: [
-          GoRoute(
-            path: 'signIn',
-            builder: (BuildContext context, GoRouterState state) => SignIn(),
-            routes: [
-              GoRoute(
-                path: 'forgotPassword',
-                builder:
-                    (BuildContext context, GoRouterState state) =>
-                        ForgotPassword(),
-                routes: [
-                  GoRoute(
-                    path: 'getCode',
-                    builder:
-                        (BuildContext context, GoRouterState state) =>
-                            GetCode(),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+        builder: (BuildContext context, GoRouterState state) => WelcomeScreen()
       ),
       ShellRoute(
         navigatorKey: shellNavigatorKey,
@@ -73,7 +48,7 @@ class AppRouter {
             path: '/profile',
             name: 'profile',
             builder:
-                (BuildContext context, GoRouterState state) => ProfilePage(),
+                (BuildContext context, GoRouterState state) => ProfilePage(name: WelcomeScreen.name),
           ),
         ],
       ),

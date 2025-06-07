@@ -108,17 +108,6 @@ class _HomePageState extends State<HomePage> {
               icon: Icon(Icons.notifications_outlined, color: Colors.white),
             ),
           ),
-          Container(
-            margin: EdgeInsets.only(right: 16),
-            decoration: BoxDecoration(
-              color: Color(0xFF334155),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              onPressed: () {},
-              icon: Icon(Icons.menu, color: Colors.white),
-            ),
-          ),
         ],
       ),
       body: SingleChildScrollView(

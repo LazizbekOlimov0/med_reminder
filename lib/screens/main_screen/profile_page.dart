@@ -1,13 +1,134 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  const ProfilePage({required this.name, super.key});
+
+  final String name;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final ImagePicker _picker = ImagePicker();
+  XFile? _selectedImage;
+  Uint8List? _imageBytes; // Web uchun
+
+  Future<void> _takePicture() async {
+    try {
+      // Show dialog to choose between camera and gallery
+      final source = await _showImageSourceDialog();
+      if (source == null) return;
+
+      final XFile? photo = await _picker.pickImage(
+        source: source,
+        maxWidth: 1800,
+        maxHeight: 1800,
+        imageQuality: 90,
+      );
+
+      if (photo != null) {
+        // Web uchun bytes olish
+        final bytes = await photo.readAsBytes();
+        setState(() {
+          _selectedImage = photo;
+          _imageBytes = bytes;
+        });
+      }
+    } catch (e) {
+      print('Error picking image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Rasm tanlashda xatolik yuz berdi'),
+          backgroundColor: Colors.red.shade400,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<ImageSource?> _showImageSourceDialog() async {
+    return await showDialog<ImageSource>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Color(0xFF1E293B),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            "Rasm tanlash",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            "Rasmni qayerdan tanlashni xohlaysiz?",
+            style: TextStyle(color: Colors.grey.shade300),
+          ),
+          actions: [
+            // Web'da kamera mavjud bo'lmasa, faqat gallery ko'rsatish
+            if (!kIsWeb || _picker.supportsImageSource(ImageSource.camera))
+              TextButton.icon(
+                onPressed: () => Navigator.of(context).pop(ImageSource.camera),
+                icon: Icon(Icons.camera_alt, color: Color(0xFF06B6D4)),
+                label: Text(
+                  "Kamera",
+                  style: TextStyle(color: Color(0xFF06B6D4)),
+                ),
+              ),
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).pop(ImageSource.gallery),
+              icon: Icon(Icons.photo_library, color: Color(0xFF8B5CF6)),
+              label: Text(
+                "Galereya",
+                style: TextStyle(color: Color(0xFF8B5CF6)),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                "Bekor qilish",
+                style: TextStyle(color: Colors.grey.shade400),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildProfileImage() {
+    if (_imageBytes != null) {
+      // Web uchun bytes dan image
+      return Image.memory(
+        _imageBytes!,
+        fit: BoxFit.cover,
+        width: 112,
+        height: 112,
+      );
+    } else {
+      // Default image yoki placeholder
+      return Image.asset(
+        "assets/images/pr.png",
+        fit: BoxFit.cover,
+        width: 112,
+        height: 112,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: 112,
+            height: 112,
+            color: Color(0xFF334155),
+            child: Icon(Icons.person, size: 60, color: Colors.white),
+          );
+        },
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -16,7 +137,7 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: Color(0xFF1E293B),
         elevation: 0,
         title: Text(
-          "Profile",
+          "Profil",
           style: TextStyle(
             color: Colors.white,
             fontSize: 24,
@@ -25,16 +146,6 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         centerTitle: true,
         iconTheme: IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.notifications_outlined, color: Colors.white),
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.settings, color: Colors.white),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(24),
@@ -89,20 +200,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(56),
-                            child: Image.asset(
-                              "assets/images/pr.png",
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: Color(0xFF334155),
-                                  child: Icon(
-                                    Icons.person,
-                                    size: 60,
-                                    color: Colors.white,
-                                  ),
-                                );
-                              },
-                            ),
+                            child: _buildProfileImage(),
                           ),
                         ),
                       ),
@@ -116,11 +214,21 @@ class _ProfilePageState extends State<ProfilePage> {
                             color: Color(0xFF10B981),
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0xFF10B981).withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: Offset(2, 2),
+                              ),
+                            ],
                           ),
-                          child: Icon(
-                            Icons.camera_alt,
-                            color: Colors.white,
-                            size: 18,
+                          child: IconButton(
+                            onPressed: _takePicture,
+                            icon: Icon(
+                              Icons.camera_alt,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                           ),
                         ),
                       ),
@@ -130,7 +238,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   // Name and Status
                   Text(
-                    "Mr Jon Due",
+                    widget.name,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -158,7 +266,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         SizedBox(width: 8),
                         Text(
-                          "Active Treatment",
+                          "Faol davolanish",
                           style: TextStyle(
                             color: Color(0xFF10B981),
                             fontSize: 12,
@@ -178,7 +286,7 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    title: "Current Medicines",
+                    title: "Joriy dorilar",
                     value: "5",
                     icon: Icons.medication,
                     color: Color(0xFF06B6D4),
@@ -187,7 +295,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 SizedBox(width: 16),
                 Expanded(
                   child: _buildStatCard(
-                    title: "Days Streak",
+                    title: "Kun ketma-ketligi",
                     value: "12",
                     icon: Icons.local_fire_department,
                     color: Color(0xFFEF4444),
@@ -200,7 +308,7 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    title: "Completed",
+                    title: "Bajarilgan",
                     value: "87%",
                     icon: Icons.check_circle,
                     color: Color(0xFF10B981),
@@ -209,7 +317,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 SizedBox(width: 16),
                 Expanded(
                   child: _buildStatCard(
-                    title: "Total Doses",
+                    title: "Jami dozalar",
                     value: "156",
                     icon: Icons.timeline,
                     color: Color(0xFF8B5CF6),
@@ -220,26 +328,20 @@ class _ProfilePageState extends State<ProfilePage> {
             SizedBox(height: 32),
 
             // Menu Options
-            _buildMenuSection("Account Settings", [
-              _buildMenuItem(Icons.person_outline, "Edit Profile", () {}),
-              _buildMenuItem(Icons.security, "Privacy & Security", () {}),
-              _buildMenuItem(Icons.notifications_outlined, "Notifications", () {}),
+            _buildMenuSection("Hisob sozlamalari", [
+              _buildMenuItem(
+                Icons.person_outline,
+                "Profilni tahrirlash",
+                () {},
+              ),
+              _buildMenuItem(Icons.history, "Dorilar tarixi", () {}),
+              _buildMenuItem(
+                Icons.notifications_outlined,
+                "Bildirishnomalar",
+                () {},
+              ),
             ]),
-            SizedBox(height: 24),
-
-            _buildMenuSection("Medicine Settings", [
-              _buildMenuItem(Icons.schedule, "Reminder Settings", () {}),
-              _buildMenuItem(Icons.history, "Medicine History", () {}),
-              _buildMenuItem(Icons.backup, "Backup & Sync", () {}),
-            ]),
-            SizedBox(height: 24),
-
-            _buildMenuSection("Support", [
-              _buildMenuItem(Icons.help_outline, "Help & FAQ", () {}),
-              _buildMenuItem(Icons.contact_support, "Contact Support", () {}),
-              _buildMenuItem(Icons.info_outline, "About App", () {}),
-            ]),
-            SizedBox(height: 32),
+            SizedBox(height: 50),
 
             // Logout Button
             Container(
@@ -274,7 +376,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         Icon(Icons.logout, color: Colors.white),
                         SizedBox(width: 8),
                         Text(
-                          "Logout",
+                          "Chiqish",
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -339,10 +441,7 @@ class _ProfilePageState extends State<ProfilePage> {
           SizedBox(height: 4),
           Text(
             title,
-            style: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
             textAlign: TextAlign.center,
           ),
         ],
@@ -438,18 +537,18 @@ class _ProfilePageState extends State<ProfilePage> {
             borderRadius: BorderRadius.circular(16),
           ),
           title: Text(
-            "Logout",
+            "Chiqish",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           content: Text(
-            "Are you sure you want to logout?",
+            "Haqiqatan ham chiqishni xohlaysizmi?",
             style: TextStyle(color: Colors.grey.shade300),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
-                "Cancel",
+                "Bekor qilish",
                 style: TextStyle(color: Colors.grey.shade400),
               ),
             ),
@@ -459,7 +558,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 // Add logout logic here
               },
               child: Text(
-                "Logout",
+                "Chiqish",
                 style: TextStyle(color: Color(0xFFEF4444)),
               ),
             ),

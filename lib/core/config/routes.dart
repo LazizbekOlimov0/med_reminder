@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:med_reminder/screens/main_screen/add_page.dart';
 import 'package:med_reminder/screens/main_screen/home_page.dart';
 import 'package:med_reminder/screens/main_screen/profile_page.dart';
+import 'package:med_reminder/screens/welcome.dart';
 
 sealed class AppRoutes{
   static const home = "home";
@@ -11,6 +12,6 @@ sealed class AppRoutes{
   static Map<String, Widget Function(BuildContext)> routes = <String, WidgetBuilder>{
     AppRoutes.home: (context) => const HomePage(),
     AppRoutes.add: (context) => const AddPage(),
-    AppRoutes.profile: (context) => const ProfilePage(),
+    AppRoutes.profile: (context) => ProfilePage(name: WelcomeScreen.name),
   };
 }

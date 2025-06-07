@@ -151,10 +151,7 @@ class _AddPageState extends State<AddPage> {
     final int timestamp = dateToSave.millisecondsSinceEpoch;
   }
 
-  Widget _buildInputDecoration({
-    required Widget child,
-    required String label,
-  }) {
+  Widget _buildInputDecoration({required Widget child, required String label}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -251,9 +248,9 @@ class _AddPageState extends State<AddPage> {
                     child: _buildInputDecoration(
                       label: "Medication Type",
                       child: Theme(
-                        data: Theme.of(context).copyWith(
-                          canvasColor: Color(0xFF1E293B),
-                        ),
+                        data: Theme.of(
+                          context,
+                        ).copyWith(canvasColor: Color(0xFF1E293B)),
                         child: DropdownButtonFormField<String>(
                           value: selectedMedicationType,
                           hint: Text(
@@ -271,11 +268,26 @@ class _AddPageState extends State<AddPage> {
                             fillColor: Colors.transparent,
                           ),
                           items: [
-                            DropdownMenuItem(value: 'tablet', child: Text('💊 Tablet')),
-                            DropdownMenuItem(value: 'liquid', child: Text('🧪 Liquid')),
-                            DropdownMenuItem(value: 'injection', child: Text('💉 Injection')),
-                            DropdownMenuItem(value: 'drops', child: Text('💧 Drops')),
-                            DropdownMenuItem(value: 'spray', child: Text('🌬️ Spray')),
+                            DropdownMenuItem(
+                              value: 'tablet',
+                              child: Text('💊 Tablet'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'liquid',
+                              child: Text('🧪 Liquid'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'injection',
+                              child: Text('💉 Injection'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'drops',
+                              child: Text('💧 Drops'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'spray',
+                              child: Text('🌬️ Spray'),
+                            ),
                           ],
                           onChanged: (value) {
                             setState(() {
@@ -303,7 +315,10 @@ class _AddPageState extends State<AddPage> {
                           ),
                           filled: true,
                           fillColor: Colors.transparent,
-                          prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF06B6D4)),
+                          prefixIcon: Icon(
+                            Icons.calendar_today,
+                            color: Color(0xFF06B6D4),
+                          ),
                         ),
                         cursorColor: Color(0xFF06B6D4),
                       ),
@@ -317,47 +332,9 @@ class _AddPageState extends State<AddPage> {
               Row(
                 children: [
                   Expanded(
+                    flex: 3,
                     child: _buildInputDecoration(
-                      label: "Frequency",
-                      child: Theme(
-                        data: Theme.of(context).copyWith(
-                          canvasColor: Color(0xFF1E293B),
-                        ),
-                        child: DropdownButtonFormField<String>(
-                          value: selectedFrequency,
-                          hint: Text(
-                            'Select Frequency',
-                            style: TextStyle(color: Colors.grey.shade400),
-                          ),
-                          dropdownColor: Color(0xFF1E293B),
-                          style: TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.transparent,
-                          ),
-                          items: [
-                            DropdownMenuItem(value: 'once', child: Text('Once daily')),
-                            DropdownMenuItem(value: 'twice', child: Text('Twice daily')),
-                            DropdownMenuItem(value: 'thrice', child: Text('Thrice daily')),
-                            DropdownMenuItem(value: 'four', child: Text('Four times daily')),
-                          ],
-                          onChanged: (value) {
-                            setState(() {
-                              selectedFrequency = value;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: _buildInputDecoration(
-                      label: "First Dose Time",
+                      label: "Dose Time",
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
@@ -374,11 +351,78 @@ class _AddPageState extends State<AddPage> {
                                 Text(
                                   getFormatTime(),
                                   style: TextStyle(
-                                    color: selectedTime != null ? Colors.white : Colors.grey.shade400,
+                                    color:
+                                        selectedTime != null
+                                            ? Colors.white
+                                            : Colors.grey.shade400,
                                     fontSize: 14,
                                   ),
                                 ),
-                                Icon(Icons.access_time, color: Color(0xFF06B6D4)),
+                                Icon(
+                                  Icons.access_time,
+                                  color: Color(0xFF06B6D4),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF10B981), Color(0xFF059669)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0xFF10B981).withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {},
+                          borderRadius: BorderRadius.circular(25),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    Icons.add,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  "Add",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -395,38 +439,33 @@ class _AddPageState extends State<AddPage> {
                 children: [
                   Expanded(
                     child: _buildInputDecoration(
-                      label: "Taking Time",
-                      child: Theme(
-                        data: Theme.of(context).copyWith(
-                          canvasColor: Color(0xFF1E293B),
-                        ),
-                        child: DropdownButtonFormField<String>(
-                          value: selectedDuration,
-                          hint: Text(
-                            'Select Time',
-                            style: TextStyle(color: Colors.grey.shade400),
-                          ),
-                          dropdownColor: Color(0xFF1E293B),
-                          style: TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
+                      label: "Start Date",
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _selectDateStart(context),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: EdgeInsets.all(16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  getFormattedDateStart(),
+                                  style: TextStyle(
+                                    color:
+                                        selectedDateStart != null
+                                            ? Colors.white
+                                            : Colors.grey.shade400,
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.date_range,
+                                  color: Color(0xFF06B6D4),
+                                ),
+                              ],
                             ),
-                            filled: true,
-                            fillColor: Colors.transparent,
                           ),
-                          items: [
-                            DropdownMenuItem(value: 'morning', child: Text('🌅 Morning')),
-                            DropdownMenuItem(value: 'afternoon', child: Text('☀️ Afternoon')),
-                            DropdownMenuItem(value: 'evening', child: Text('🌆 Evening')),
-                            DropdownMenuItem(value: 'night', child: Text('🌙 Night')),
-                          ],
-                          onChanged: (value) {
-                            setState(() {
-                              selectedDuration = value;
-                            });
-                          },
                         ),
                       ),
                     ),
@@ -447,7 +486,10 @@ class _AddPageState extends State<AddPage> {
                           ),
                           filled: true,
                           fillColor: Colors.transparent,
-                          prefixIcon: Icon(Icons.medication, color: Color(0xFF10B981)),
+                          prefixIcon: Icon(
+                            Icons.medication,
+                            color: Color(0xFF10B981),
+                          ),
                         ),
                         cursorColor: Color(0xFF10B981),
                       ),
@@ -472,72 +514,13 @@ class _AddPageState extends State<AddPage> {
                     ),
                     filled: true,
                     fillColor: Colors.transparent,
-                    prefixIcon: Icon(Icons.local_pharmacy, color: Color(0xFF8B5CF6)),
+                    prefixIcon: Icon(
+                      Icons.local_pharmacy,
+                      color: Color(0xFF8B5CF6),
+                    ),
                   ),
                   cursorColor: Color(0xFF8B5CF6),
                 ),
-              ),
-              SizedBox(height: 24),
-
-              // Date Selection
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildInputDecoration(
-                      label: "Start Date",
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => _selectDateStart(context),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: EdgeInsets.all(16),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  getFormattedDateStart(),
-                                  style: TextStyle(
-                                    color: selectedDateStart != null ? Colors.white : Colors.grey.shade400,
-                                  ),
-                                ),
-                                Icon(Icons.date_range, color: Color(0xFF06B6D4)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: _buildInputDecoration(
-                      label: "End Date",
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => _selectDateEnd(context),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: EdgeInsets.all(16),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  getFormattedDateEnd(),
-                                  style: TextStyle(
-                                    color: selectedDateEnd != null ? Colors.white : Colors.grey.shade400,
-                                  ),
-                                ),
-                                Icon(Icons.date_range, color: Color(0xFF06B6D4)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ),
               SizedBox(height: 24),
 
@@ -593,7 +576,11 @@ class _AddPageState extends State<AddPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_circle_outline, color: Colors.white, size: 24),
+                          Icon(
+                            Icons.add_circle_outline,
+                            color: Colors.white,
+                            size: 24,
+                          ),
                           SizedBox(width: 12),
                           Text(
                             "Add Medicine",
