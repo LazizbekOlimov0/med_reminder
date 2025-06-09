@@ -114,39 +114,6 @@ class _AddPageState extends State<AddPage> {
     }
   }
 
-  Future<void> _selectDateEnd(BuildContext context) async {
-    final DateTime currentDate = DateTime.now();
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: selectedDateEnd ?? currentDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.dark(
-              primary: Color(0xFF06B6D4),
-              onPrimary: Colors.white,
-              surface: Color(0xFF1E293B),
-              onSurface: Colors.white,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: Color(0xFF06B6D4)),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (pickedDate != null && pickedDate != selectedDateEnd) {
-      setState(() {
-        selectedDateEnd = pickedDate;
-        _saveDateToStorage(pickedDate);
-      });
-    }
-  }
-
   void _saveDateToStorage(DateTime dateToSave) {
     final int timestamp = dateToSave.millisecondsSinceEpoch;
   }
