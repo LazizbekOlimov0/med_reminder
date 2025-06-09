@@ -270,12 +270,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                               cursorColor: Color(0xFF06B6D4),
                             ),
                           ),
-                          SizedBox(height: 40),
+                          SizedBox(height: 28),
 
                           // Continue Button
                           Container(
                             width: double.infinity,
-                            height: 60,
+                            height: 50,
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [Color(0xFF06B6D4), Color(0xFF8B5CF6)],
@@ -326,7 +326,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                     ),
                   ),
 
-                  SizedBox(height: 40),
+                  SizedBox(height: 20),
 
                   // Footer
                   FadeTransition(
@@ -366,7 +366,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                             ),
                           ],
                         ),
-                        SizedBox(height: 20),
+                        SizedBox(height: 10),
                         Text(
                           "Sog'liq - eng katta boylik",
                           style: TextStyle(

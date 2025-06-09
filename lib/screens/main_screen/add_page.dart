@@ -299,7 +299,7 @@ class _AddPageState extends State<AddPage> {
               Row(
                 children: [
                   Expanded(
-                    flex: 3,
+                    flex: 2,
                     child: _buildInputDecoration(
                       label: "Dose Time",
                       child: Material(
