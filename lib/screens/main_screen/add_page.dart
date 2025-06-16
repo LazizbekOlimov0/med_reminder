@@ -319,9 +319,9 @@ class _AddPageState extends State<AddPage> {
                                   getFormatTime(),
                                   style: TextStyle(
                                     color:
-                                        selectedTime != null
-                                            ? Colors.white
-                                            : Colors.grey.shade400,
+                                    selectedTime != null
+                                        ? Colors.white
+                                        : Colors.grey.shade400,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -421,9 +421,9 @@ class _AddPageState extends State<AddPage> {
                                   getFormattedDateStart(),
                                   style: TextStyle(
                                     color:
-                                        selectedDateStart != null
-                                            ? Colors.white
-                                            : Colors.grey.shade400,
+                                    selectedDateStart != null
+                                        ? Colors.white
+                                        : Colors.grey.shade400,
                                   ),
                                 ),
                                 Icon(

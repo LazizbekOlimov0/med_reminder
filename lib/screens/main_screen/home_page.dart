@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../controllers/auth_controller.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,7 +11,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   TextEditingController controllerSearch = TextEditingController();
-  final authController = AuthController();
 
   // Dorilar uchun turli ranglar
   final List<Map<String, dynamic>> medicineColors = [
@@ -149,15 +147,7 @@ class _HomePageState extends State<HomePage> {
                       borderSide: BorderSide(color: Color(0xFF06B6D4), width: 2),
                     ),
                   ),
-                  onChanged: (value) async {
-                    final success = await authController.search(
-                        context,
-                        controllerSearch.text
-                    );
-                    if (success) {
-                      context.go('/home');
-                    }
-                  },
+                  onChanged: (value) async {},
                   controller: controllerSearch,
                   style: TextStyle(color: Colors.white),
                   cursorColor: Color(0xFF06B6D4),
