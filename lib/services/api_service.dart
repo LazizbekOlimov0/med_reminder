@@ -4,311 +4,335 @@ import 'package:http/http.dart' as http;
 import 'package:med_reminder/models/medication.dart';
 
 class ApiService {
-  // Replace with your actual API base URL
   static const String baseUrl = 'https://your-api-url.com/api';
-  static const Duration timeoutDuration = Duration(seconds: 30);
+  static const Duration timeout = Duration(seconds: 30);
 
-  // Headers for API requests
-  static Map<String, String> get _headers => {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    // Add authorization header if needed
-    // 'Authorization': 'Bearer ${your_token}',
-  };
+  // Helper method to create headers
+  static Map<String, String> _getHeaders() {
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+  }
 
-  /// Create a new medicine
+  // Helper method to handle HTTP errors
+  static void _handleHttpError(http.Response response) {
+    switch (response.statusCode) {
+      case 400:
+        throw ApiException('Bad Request: Invalid data sent to server', response.statusCode);
+      case 401:
+        throw ApiException('Unauthorized: Please check your credentials', response.statusCode);
+      case 403:
+        throw ApiException('Forbidden: Access denied', response.statusCode);
+      case 404:
+        throw ApiException('Not Found: The requested resource was not found', response.statusCode);
+      case 500:
+        throw ApiException('Internal Server Error: Please try again later', response.statusCode);
+      case 503:
+        throw ApiException('Service Unavailable: Server is temporarily unavailable', response.statusCode);
+      default:
+        throw ApiException('HTTP Error: ${response.statusCode} - ${response.reasonPhrase}', response.statusCode);
+    }
+  }
+
   static Future<http.Response> createMedicine(MedicineModel medicine) async {
-    try {
-      final url = Uri.parse('$baseUrl/medicines');
+    final url = Uri.parse('$baseUrl/Medication/create');
 
+    try {
       final response = await http.post(
         url,
-        headers: _headers,
+        headers: _getHeaders(),
         body: jsonEncode(medicine.toJson()),
-      ).timeout(timeoutDuration);
+      ).timeout(timeout);
 
-      return response;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response;
+      } else {
+        _handleHttpError(response);
+        return response; // This line won't be reached, but needed for return type
+      }
     } on SocketException {
-      throw Exception('No internet connection');
-    } on HttpException {
-      throw Exception('HTTP error occurred');
+      throw ApiException('No internet connection. Please check your network.', 0);
+    } on http.ClientException {
+      throw ApiException('Network error. Please try again.', 0);
     } on FormatException {
-      throw Exception('Bad response format');
+      throw ApiException('Invalid data format.', 0);
     } catch (e) {
-      throw Exception('Failed to create medicine: $e');
+      if (e is ApiException) {
+        rethrow;
+      }
+      throw ApiException('Failed to create medicine: ${e.toString()}', 0);
     }
   }
 
-  /// Get all medicines for a user
-  static Future<http.Response> getMedicines(String userId) async {
+  static Future<List<MedicineModel>> getAllMedicines({String? userId}) async {
+    String url = '$baseUrl/Medication/get-all';
+
+    // Add userId as query parameter if provided
+    if (userId != null && userId.isNotEmpty) {
+      url += '?userId=$userId';
+    }
+
+    final uri = Uri.parse(url);
+
     try {
-      final url = Uri.parse('$baseUrl/medicines?userId=$userId');
-
       final response = await http.get(
-        url,
-        headers: _headers,
-      ).timeout(timeoutDuration);
+        uri,
+        headers: _getHeaders(),
+      ).timeout(timeout);
 
-      return response;
+      if (response.statusCode == 200) {
+        final responseBody = response.body;
+
+        // Check if response is empty
+        if (responseBody.isEmpty) {
+          return <MedicineModel>[];
+        }
+
+        final dynamic decodedData = jsonDecode(responseBody);
+
+        // Handle different response formats
+        List<dynamic> data;
+        if (decodedData is Map<String, dynamic>) {
+          // If the response is wrapped in an object (e.g., {"data": [...], "success": true})
+          if (decodedData.containsKey('data')) {
+            data = decodedData['data'] as List<dynamic>;
+          } else if (decodedData.containsKey('medicines')) {
+            data = decodedData['medicines'] as List<dynamic>;
+          } else {
+            // If it's a single object, wrap it in a list
+            data = [decodedData];
+          }
+        } else if (decodedData is List) {
+          data = decodedData;
+        } else {
+          throw ApiException('Unexpected response format', response.statusCode);
+        }
+
+        return data.map((item) {
+          try {
+            return MedicineModel.fromJson(item as Map<String, dynamic>);
+          } catch (e) {
+            throw ApiException('Failed to parse medicine data: ${e.toString()}', response.statusCode);
+          }
+        }).toList();
+      } else {
+        _handleHttpError(response);
+        return <MedicineModel>[]; // This line won't be reached, but needed for return type
+      }
     } on SocketException {
-      throw Exception('No internet connection');
-    } on HttpException {
-      throw Exception('HTTP error occurred');
-    } on FormatException {
-      throw Exception('Bad response format');
+      throw ApiException('No internet connection. Please check your network.', 0);
+    } on http.ClientException {
+      throw ApiException('Network error. Please try again.', 0);
+    } on FormatException catch (e) {
+      throw ApiException('Invalid JSON response: ${e.toString()}', 0);
     } catch (e) {
-      throw Exception('Failed to get medicines: $e');
+      if (e is ApiException) {
+        rethrow;
+      }
+      throw ApiException('Failed to fetch medicines: ${e.toString()}', 0);
     }
   }
 
-  /// Get a specific medicine by ID
-  static Future<http.Response> getMedicineById(String medicineId) async {
-    try {
-      final url = Uri.parse('$baseUrl/medicines/$medicineId');
-
-      final response = await http.get(
-        url,
-        headers: _headers,
-      ).timeout(timeoutDuration);
-
-      return response;
-    } on SocketException {
-      throw Exception('No internet connection');
-    } on HttpException {
-      throw Exception('HTTP error occurred');
-    } on FormatException {
-      throw Exception('Bad response format');
-    } catch (e) {
-      throw Exception('Failed to get medicine: $e');
-    }
-  }
-
-  /// Update an existing medicine
+  // Additional helper methods
   static Future<http.Response> updateMedicine(String medicineId, MedicineModel medicine) async {
-    try {
-      final url = Uri.parse('$baseUrl/medicines/$medicineId');
+    final url = Uri.parse('$baseUrl/Medication/update/$medicineId');
 
+    try {
       final response = await http.put(
         url,
-        headers: _headers,
+        headers: _getHeaders(),
         body: jsonEncode(medicine.toJson()),
-      ).timeout(timeoutDuration);
+      ).timeout(timeout);
 
-      return response;
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return response;
+      } else {
+        _handleHttpError(response);
+        return response;
+      }
     } on SocketException {
-      throw Exception('No internet connection');
-    } on HttpException {
-      throw Exception('HTTP error occurred');
-    } on FormatException {
-      throw Exception('Bad response format');
+      throw ApiException('No internet connection. Please check your network.', 0);
+    } on http.ClientException {
+      throw ApiException('Network error. Please try again.', 0);
     } catch (e) {
-      throw Exception('Failed to update medicine: $e');
+      if (e is ApiException) {
+        rethrow;
+      }
+      throw ApiException('Failed to update medicine: ${e.toString()}', 0);
     }
   }
 
-  /// Delete a medicine
   static Future<http.Response> deleteMedicine(String medicineId) async {
-    try {
-      final url = Uri.parse('$baseUrl/medicines/$medicineId');
+    final url = Uri.parse('$baseUrl/Medication/delete/$medicineId');
 
+    try {
       final response = await http.delete(
         url,
-        headers: _headers,
-      ).timeout(timeoutDuration);
+        headers: _getHeaders(),
+      ).timeout(timeout);
 
-      return response;
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return response;
+      } else {
+        _handleHttpError(response);
+        return response;
+      }
     } on SocketException {
-      throw Exception('No internet connection');
-    } on HttpException {
-      throw Exception('HTTP error occurred');
-    } on FormatException {
-      throw Exception('Bad response format');
+      throw ApiException('No internet connection. Please check your network.', 0);
+    } on http.ClientException {
+      throw ApiException('Network error. Please try again.', 0);
     } catch (e) {
-      throw Exception('Failed to delete medicine: $e');
+      if (e is ApiException) {
+        rethrow;
+      }
+      throw ApiException('Failed to delete medicine: ${e.toString()}', 0);
     }
   }
 
-  /// Search for medicines by name
-  static Future<http.Response> searchMedicine(String medicineName) async {
-    try {
-      final encodedName = Uri.encodeComponent(medicineName);
-      final url = Uri.parse('$baseUrl/medicines/search?name=$encodedName');
+  static Future<MedicineModel?> getMedicineById(String medicineId) async {
+    final url = Uri.parse('$baseUrl/Medication/get/$medicineId');
 
+    try {
       final response = await http.get(
         url,
-        headers: _headers,
-      ).timeout(timeoutDuration);
+        headers: _getHeaders(),
+      ).timeout(timeout);
 
-      return response;
+      if (response.statusCode == 200) {
+        final dynamic data = jsonDecode(response.body);
+        return MedicineModel.fromJson(data as Map<String, dynamic>);
+      } else if (response.statusCode == 404) {
+        return null; // Medicine not found
+      } else {
+        _handleHttpError(response);
+        return null;
+      }
     } on SocketException {
-      throw Exception('No internet connection');
-    } on HttpException {
-      throw Exception('HTTP error occurred');
-    } on FormatException {
-      throw Exception('Bad response format');
+      throw ApiException('No internet connection. Please check your network.', 0);
+    } on http.ClientException {
+      throw ApiException('Network error. Please try again.', 0);
     } catch (e) {
-      throw Exception('Failed to search medicine: $e');
+      if (e is ApiException) {
+        rethrow;
+      }
+      throw ApiException('Failed to fetch medicine: ${e.toString()}', 0);
     }
   }
 
-  /// Get active medicines for a user
-  static Future<http.Response> getActiveMedicines(String userId) async {
-    try {
-      final url = Uri.parse('$baseUrl/medicines/active?userId=$userId');
+  // Search medicines by name or other criteria
+  static Future<List<MedicineModel>> searchMedicines(String searchQuery, {String? userId}) async {
+    if (searchQuery.trim().isEmpty) {
+      throw ApiException('Search query cannot be empty', 400);
+    }
 
+    // URL encode the search query to handle special characters
+    final encodedQuery = Uri.encodeComponent(searchQuery.trim());
+    String url = '$baseUrl/Medication/search/$encodedQuery';
+
+    // Add userId as query parameter if provided
+    if (userId != null && userId.isNotEmpty) {
+      url += '?userId=$userId';
+    }
+
+    final uri = Uri.parse(url);
+
+    try {
       final response = await http.get(
-        url,
-        headers: _headers,
-      ).timeout(timeoutDuration);
+        uri,
+        headers: _getHeaders(),
+      ).timeout(timeout);
 
-      return response;
+      if (response.statusCode == 200) {
+        final responseBody = response.body;
+
+        // Check if response is empty
+        if (responseBody.isEmpty) {
+          return <MedicineModel>[];
+        }
+
+        final dynamic decodedData = jsonDecode(responseBody);
+
+        // Handle different response formats
+        List<dynamic> data;
+        if (decodedData is Map<String, dynamic>) {
+          // If the response is wrapped in an object
+          if (decodedData.containsKey('data')) {
+            data = decodedData['data'] as List<dynamic>;
+          } else if (decodedData.containsKey('medicines')) {
+            data = decodedData['medicines'] as List<dynamic>;
+          } else if (decodedData.containsKey('results')) {
+            data = decodedData['results'] as List<dynamic>;
+          } else {
+            // If it's a single object, wrap it in a list
+            data = [decodedData];
+          }
+        } else if (decodedData is List) {
+          data = decodedData;
+        } else {
+          throw ApiException('Unexpected response format', response.statusCode);
+        }
+
+        return data.map((item) {
+          try {
+            return MedicineModel.fromJson(item as Map<String, dynamic>);
+          } catch (e) {
+            throw ApiException('Failed to parse medicine data: ${e.toString()}', response.statusCode);
+          }
+        }).toList();
+      } else if (response.statusCode == 404) {
+        // No medicines found matching the search criteria
+        return <MedicineModel>[];
+      } else {
+        _handleHttpError(response);
+        return <MedicineModel>[];
+      }
     } on SocketException {
-      throw Exception('No internet connection');
-    } on HttpException {
-      throw Exception('HTTP error occurred');
-    } on FormatException {
-      throw Exception('Bad response format');
+      throw ApiException('No internet connection. Please check your network.', 0);
+    } on http.ClientException {
+      throw ApiException('Network error. Please try again.', 0);
+    } on FormatException catch (e) {
+      throw ApiException('Invalid JSON response: ${e.toString()}', 0);
     } catch (e) {
-      throw Exception('Failed to get active medicines: $e');
+      if (e is ApiException) {
+        rethrow;
+      }
+      throw ApiException('Failed to search medicines: ${e.toString()}', 0);
     }
   }
 
-  /// Toggle medicine active status
-  static Future<http.Response> toggleMedicineStatus(String medicineId, bool isActive) async {
+  // Method to check API connectivity
+  static Future<bool> checkConnectivity() async {
     try {
-      final url = Uri.parse('$baseUrl/medicines/$medicineId/toggle-status');
-
-      final response = await http.patch(
-        url,
-        headers: _headers,
-        body: jsonEncode({'isActive': isActive}),
-      ).timeout(timeoutDuration);
-
-      return response;
-    } on SocketException {
-      throw Exception('No internet connection');
-    } on HttpException {
-      throw Exception('HTTP error occurred');
-    } on FormatException {
-      throw Exception('Bad response format');
+      final url = Uri.parse('$baseUrl/health'); // Assuming you have a health check endpoint
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
+      return response.statusCode == 200;
     } catch (e) {
-      throw Exception('Failed to toggle medicine status: $e');
+      return false;
     }
   }
+}
 
-  /// Get medicines by date range
-  static Future<http.Response> getMedicinesByDateRange(
-      String userId,
-      DateTime startDate,
-      DateTime endDate,
-      ) async {
+// Custom exception class for API errors
+class ApiException implements Exception {
+  final String message;
+  final int statusCode;
+
+  const ApiException(this.message, this.statusCode);
+
+  @override
+  String toString() => 'ApiException: $message (Status Code: $statusCode)';
+}
+
+// Extension for easier error handling in UI
+extension ApiResponseExtension on http.Response {
+  bool get isSuccess => statusCode >= 200 && statusCode < 300;
+
+  Map<String, dynamic>? get jsonBody {
     try {
-      final start = startDate.toIso8601String();
-      final end = endDate.toIso8601String();
-      final url = Uri.parse('$baseUrl/medicines/date-range?userId=$userId&startDate=$start&endDate=$end');
-
-      final response = await http.get(
-        url,
-        headers: _headers,
-      ).timeout(timeoutDuration);
-
-      return response;
-    } on SocketException {
-      throw Exception('No internet connection');
-    } on HttpException {
-      throw Exception('HTTP error occurred');
-    } on FormatException {
-      throw Exception('Bad response format');
+      return jsonDecode(body) as Map<String, dynamic>?;
     } catch (e) {
-      throw Exception('Failed to get medicines by date range: $e');
-    }
-  }
-
-  /// Mark dose as taken
-  static Future<http.Response> markDoseAsTaken(
-      String medicineId,
-      String doseTime,
-      DateTime takenDate,
-      ) async {
-    try {
-      final url = Uri.parse('$baseUrl/medicines/$medicineId/dose-taken');
-
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: jsonEncode({
-          'doseTime': doseTime,
-          'takenDate': takenDate.toIso8601String(),
-          'status': 'taken',
-        }),
-      ).timeout(timeoutDuration);
-
-      return response;
-    } on SocketException {
-      throw Exception('No internet connection');
-    } on HttpException {
-      throw Exception('HTTP error occurred');
-    } on FormatException {
-      throw Exception('Bad response format');
-    } catch (e) {
-      throw Exception('Failed to mark dose as taken: $e');
-    }
-  }
-
-  /// Get dose history for a medicine
-  static Future<http.Response> getDoseHistory(String medicineId) async {
-    try {
-      final url = Uri.parse('$baseUrl/medicines/$medicineId/dose-history');
-
-      final response = await http.get(
-        url,
-        headers: _headers,
-      ).timeout(timeoutDuration);
-
-      return response;
-    } on SocketException {
-      throw Exception('No internet connection');
-    } on HttpException {
-      throw Exception('HTTP error occurred');
-    } on FormatException {
-      throw Exception('Bad response format');
-    } catch (e) {
-      throw Exception('Failed to get dose history: $e');
-    }
-  }
-
-  /// Helper method to parse medicine list from response
-  static List<MedicineModel> parseMedicineList(String responseBody) {
-    try {
-      final List<dynamic> jsonList = jsonDecode(responseBody);
-      return jsonList.map((json) => MedicineModel.fromJson(json)).toList();
-    } catch (e) {
-      throw Exception('Failed to parse medicine list: $e');
-    }
-  }
-
-  /// Helper method to parse single medicine from response
-  static MedicineModel parseMedicine(String responseBody) {
-    try {
-      final Map<String, dynamic> json = jsonDecode(responseBody);
-      return MedicineModel.fromJson(json);
-    } catch (e) {
-      throw Exception('Failed to parse medicine: $e');
-    }
-  }
-
-  /// Helper method to check if response is successful
-  static bool isSuccessful(int statusCode) {
-    return statusCode >= 200 && statusCode < 300;
-  }
-
-  /// Helper method to handle error responses
-  static String getErrorMessage(http.Response response) {
-    try {
-      final Map<String, dynamic> errorJson = jsonDecode(response.body);
-      return errorJson['message'] ?? errorJson['error'] ?? 'Unknown error occurred';
-    } catch (e) {
-      return 'HTTP ${response.statusCode}: ${response.reasonPhrase}';
+      return null;
     }
   }
 }

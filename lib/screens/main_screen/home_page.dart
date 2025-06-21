@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-
+import '../../models/medication.dart';
+import '../../services/api_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,77 +10,101 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  TextEditingController controllerSearch = TextEditingController();
+  List<MedicineModel> medicines = [];
+  List<MedicineModel> filteredMedicines = [];
+  bool isLoading = true;
+  String errorMessage = '';
+  TextEditingController searchController = TextEditingController();
 
-  // Dorilar uchun turli ranglar
-  final List<Map<String, dynamic>> medicineColors = [
-    {
-      'gradient': [Color(0xFF6366F1), Color(0xFF8B5CF6)], // Indigo to Purple
-      'shadowColor': Color(0xFF6366F1).withOpacity(0.3),
-    },
-    {
-      'gradient': [Color(0xFF06B6D4), Color(0xFF0891B2)], // Cyan to Sky
-      'shadowColor': Color(0xFF06B6D4).withOpacity(0.3),
-    },
-    {
-      'gradient': [Color(0xFF10B981), Color(0xFF059669)], // Emerald to Green
-      'shadowColor': Color(0xFF10B981).withOpacity(0.3),
-    },
-    {
-      'gradient': [Color(0xFFF59E0B), Color(0xFFD97706)], // Amber to Orange
-      'shadowColor': Color(0xFFF59E0B).withOpacity(0.3),
-    },
-    {
-      'gradient': [Color(0xFFEF4444), Color(0xFFDC2626)], // Red to Red-600
-      'shadowColor': Color(0xFFEF4444).withOpacity(0.3),
-    },
-    {
-      'gradient': [Color(0xFFEC4899), Color(0xFFDB2777)], // Pink to Pink-600
-      'shadowColor': Color(0xFFEC4899).withOpacity(0.3),
-    },
-    {
-      'gradient': [Color(0xFF8B5CF6), Color(0xFF7C3AED)], // Violet to Purple-600
-      'shadowColor': Color(0xFF8B5CF6).withOpacity(0.3),
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    fetchMedicines();
+  }
 
-  final List<String> medicineNames = [
-    'Amoxicillin',
-    'Ibuprofen',
-    'Paracetamol',
-    'Aspirin',
-    'Metformin',
-    'Omeprazole',
-    'Lisinopril',
-  ];
+  Future<void> fetchMedicines() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = '';
+    });
 
-  final List<String> medicineTime = [
-    'Night',
-    'Morning',
-    'Afternoon',
-    'Evening',
-    'Night',
-    'Morning',
-    'Afternoon',
-  ];
+    try {
+      final result = await ApiService.getAllMedicines();
+      setState(() {
+        medicines = result;
+        filteredMedicines = result;
+        isLoading = false;
+      });
 
-  final List<String> medicineDose = [
-    '1 Tablet',
-    '2 Tablets',
-    '1 Capsule',
-    '1 Tablet',
-    '2 Tablets',
-    '1 Capsule',
-    '1 Tablet',
-  ];
+      // Debug print to see what we got
+      print('Fetched ${result.length} medicines');
+      for (var med in result) {
+        print('Medicine: ${med.name} - ${med.quantity} ${med.type}');
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        errorMessage = e.toString();
+      });
+      print('Error fetching medicines: $e');
+
+      // Show error to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load medicines: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  void _filterSearchResults(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        filteredMedicines = medicines;
+      });
+    } else {
+      setState(() {
+        filteredMedicines = medicines.where((med) =>
+        med.name.toLowerCase().contains(query.toLowerCase()) ||
+            med.type.toLowerCase().contains(query.toLowerCase())).toList();
+      });
+    }
+  }
+
+  Future<void> _performSearch(String query) async {
+    if (query.trim().isEmpty) {
+      _filterSearchResults(query);
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final searchResults = await ApiService.searchMedicines(query);
+      setState(() {
+        filteredMedicines = searchResults;
+        isLoading = false;
+      });
+    } catch (e) {
+      // If search fails, fall back to local filtering
+      _filterSearchResults(query);
+      setState(() {
+        isLoading = false;
+      });
+      print('Search failed, using local filter: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    double sizeHeight = MediaQuery.of(context).size.height;
-    double sizeWidth = MediaQuery.of(context).size.width;
-
     return Scaffold(
-      backgroundColor: Color(0xFF0F172A), // Dark background
+      backgroundColor: Color(0xFF0F172A),
       appBar: AppBar(
         backgroundColor: Color(0xFF1E293B),
         elevation: 0,
@@ -93,7 +117,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         centerTitle: false,
-        titleSpacing: 20,
         actions: [
           Container(
             margin: EdgeInsets.only(right: 8),
@@ -102,227 +125,279 @@ class _HomePageState extends State<HomePage> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              onPressed: () {},
+              onPressed: () {
+                // Navigate to notifications page
+              },
               icon: Icon(Icons.notifications_outlined, color: Colors.white),
+            ),
+          ),
+          Container(
+            margin: EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: Color(0xFF334155),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              onPressed: fetchMedicines,
+              icon: Icon(Icons.refresh, color: Colors.white),
             ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20),
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Search Bar
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF1E293B), Color(0xFF334155)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            // Search Bar
+            TextField(
+              controller: searchController,
+              onChanged: _filterSearchResults,
+              onSubmitted: _performSearch,
+              style: TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: "Search medicine...",
+                hintStyle: TextStyle(color: Colors.white70),
+                prefixIcon: Icon(Icons.search, color: Colors.white70),
+                suffixIcon: searchController.text.isNotEmpty
+                    ? IconButton(
+                  onPressed: () {
+                    searchController.clear();
+                    _filterSearchResults('');
+                  },
+                  icon: Icon(Icons.clear, color: Colors.white70),
+                )
+                    : null,
+                filled: true,
+                fillColor: Color(0xFF1E293B),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+
+            // Medicine Count
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Your Medicines",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
+                ),
+                Text(
+                  "${filteredMedicines.length} medicine${filteredMedicines.length != 1 ? 's' : ''}",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+
+            // Content Area
+            Expanded(
+              child: isLoading
+                  ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: Color(0xFF06B6D4)),
+                    SizedBox(height: 16),
+                    Text(
+                      "Loading medicines...",
+                      style: TextStyle(color: Colors.white70),
                     ),
                   ],
                 ),
-                child: TextField(
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.transparent,
-                    hintText: "Search medicines & advice",
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    prefixIcon: Icon(Icons.search, color: Color(0xFF06B6D4)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
+              )
+                  : errorMessage.isNotEmpty
+                  ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 64,
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Color(0xFF06B6D4), width: 2),
-                    ),
-                  ),
-                  onChanged: (value) async {},
-                  controller: controllerSearch,
-                  style: TextStyle(color: Colors.white),
-                  cursorColor: Color(0xFF06B6D4),
-                ),
-              ),
-              SizedBox(height: 30),
-
-              // Title
-              Row(
-                children: [
-                  Container(
-                    width: 4,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF06B6D4), Color(0xFF8B5CF6)],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
+                    SizedBox(height: 16),
+                    Text(
+                      "Error loading medicines",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                      borderRadius: BorderRadius.circular(2),
                     ),
-                  ),
-                  SizedBox(width: 12),
-                  Text(
-                    "Your Medicines",
-                    style: TextStyle(
-                      fontSize: 28,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 24),
-
-              // Medicine List
-              ListView.builder(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: 7,
-                itemBuilder: (context, index) {
-                  final colorData = medicineColors[index % medicineColors.length];
-
-                  return Container(
-                    margin: EdgeInsets.only(bottom: 20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: colorData['gradient'],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colorData['shadowColor'],
-                          blurRadius: 15,
-                          offset: Offset(0, 8),
+                    SizedBox(height: 8),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 32),
+                      child: Text(
+                        errorMessage,
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
                         ),
-                      ],
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {},
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          padding: EdgeInsets.all(24),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          medicineNames[index],
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 24,
-                                          ),
-                                        ),
-                                        SizedBox(height: 4),
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 4
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.2),
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            "Antibiotic",
-                                            style: TextStyle(
-                                              color: Colors.white.withOpacity(0.9),
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: IconButton(
-                                      onPressed: () {},
-                                      icon: Icon(
-                                        Icons.more_vert,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 20),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.access_time,
-                                        color: Colors.white.withOpacity(0.8),
-                                        size: 18,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        medicineTime[index],
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.medication,
-                                        color: Colors.white.withOpacity(0.8),
-                                        size: 18,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        medicineDose[index],
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
+                    SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: fetchMedicines,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF06B6D4),
+                      ),
+                      child: Text("Retry"),
+                    ),
+                  ],
+                ),
+              )
+                  : filteredMedicines.isEmpty
+                  ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.medical_services_outlined,
+                      color: Colors.white70,
+                      size: 64,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      searchController.text.isNotEmpty
+                          ? "No medicines found"
+                          : "No medicines yet",
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 18,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      searchController.text.isNotEmpty
+                          ? "Try searching with different keywords"
+                          : "Add your first medicine to get started",
+                      style: TextStyle(
+                        color: Colors.white60,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+                  : RefreshIndicator(
+                onRefresh: fetchMedicines,
+                color: Color(0xFF06B6D4),
+                backgroundColor: Color(0xFF1E293B),
+                child: ListView.builder(
+                  itemCount: filteredMedicines.length,
+                  itemBuilder: (context, index) {
+                    final med = filteredMedicines[index];
+                    return Container(
+                      margin: EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF06B6D4), Color(0xFF0891B2)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0xFF06B6D4).withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.all(16),
+                        title: Text(
+                          med.name,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.medical_services,
+                                  color: Colors.white70,
+                                  size: 16,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  "${med.quantity} - ${med.type}",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.schedule,
+                                  color: Colors.white70,
+                                  size: 16,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  med.doseTime ?? "No time set",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        trailing: Icon(
+                          Icons.chevron_right,
+                          color: Colors.white,
+                        ),
+                        onTap: () {
+                          // Navigate to medicine detail page
+                          print('Tapped medicine: ${med.name}');
+                        },
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Navigate to add medicine page
+          print('Add medicine pressed');
+        },
+        backgroundColor: Color(0xFF06B6D4),
+        child: Icon(Icons.add, color: Colors.white),
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 }

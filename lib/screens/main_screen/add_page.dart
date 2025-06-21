@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+
+import '../../models/medication.dart';
+import '../../services/api_service.dart';
 
 class AddPage extends StatefulWidget {
   const AddPage({super.key});
@@ -9,21 +13,30 @@ class AddPage extends StatefulWidget {
 }
 
 class _AddPageState extends State<AddPage> {
-  TextEditingController controllerMedicineName = TextEditingController();
-  TextEditingController controllerDayCount = TextEditingController();
-  TextEditingController controllerStrength = TextEditingController();
-  TextEditingController controllerNotes = TextEditingController();
+  final TextEditingController controllerMedicineName = TextEditingController();
+  final TextEditingController controllerDayCount = TextEditingController();
+  final TextEditingController controllerStrength = TextEditingController();
+  final TextEditingController controllerNotes = TextEditingController();
 
   TimeOfDay? selectedTime;
   String? selectedMedicationType;
-  String? selectedFrequency;
-  String? selectedDuration;
+  DateTime? selectedDateStart;
+  bool isLoading = false;
+
+  @override
+  void dispose() {
+    controllerMedicineName.dispose();
+    controllerDayCount.dispose();
+    controllerStrength.dispose();
+    controllerNotes.dispose();
+    super.dispose();
+  }
 
   String getFormatTime() {
     if (selectedTime == null) {
       return 'First Dose Time';
     }
-    return '${selectedTime!.hour}:${selectedTime!.minute.toString().padLeft(2, '0')}';
+    return '${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}';
   }
 
   Future<void> _selectTime(BuildContext context) async {
@@ -34,7 +47,7 @@ class _AddPageState extends State<AddPage> {
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            timePickerTheme: TimePickerThemeData(
+            timePickerTheme: const TimePickerThemeData(
               backgroundColor: Color(0xFF1E293B),
               hourMinuteTextColor: Color(0xFF06B6D4),
               dayPeriodTextColor: Color(0xFF06B6D4),
@@ -44,7 +57,9 @@ class _AddPageState extends State<AddPage> {
               dayPeriodTextStyle: TextStyle(color: Colors.white),
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: Color(0xFF06B6D4)),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF06B6D4),
+              ),
             ),
           ),
           child: child!,
@@ -55,17 +70,9 @@ class _AddPageState extends State<AddPage> {
     if (pickedTime != null && pickedTime != selectedTime) {
       setState(() {
         selectedTime = pickedTime;
-        _saveTimeToDatabase(pickedTime);
       });
     }
   }
-
-  void _saveTimeToDatabase(TimeOfDay timeToSave) {
-    int minutesSinceMidnight = timeToSave.hour * 60 + timeToSave.minute;
-  }
-
-  DateTime? selectedDateStart;
-  DateTime? selectedDateEnd;
 
   String getFormattedDateStart() {
     if (selectedDateStart == null) {
@@ -74,31 +81,26 @@ class _AddPageState extends State<AddPage> {
     return DateFormat('dd.MM.yyyy').format(selectedDateStart!);
   }
 
-  String getFormattedDateEnd() {
-    if (selectedDateEnd == null) {
-      return 'Dose End Date';
-    }
-    return DateFormat('dd.MM.yyyy').format(selectedDateEnd!);
-  }
-
   Future<void> _selectDateStart(BuildContext context) async {
     final DateTime currentDate = DateTime.now();
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: selectedDateStart ?? currentDate,
-      firstDate: DateTime(2000),
+      firstDate: currentDate,
       lastDate: DateTime(2101),
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.dark(
+            colorScheme: const ColorScheme.dark(
               primary: Color(0xFF06B6D4),
               onPrimary: Colors.white,
               surface: Color(0xFF1E293B),
               onSurface: Colors.white,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: Color(0xFF06B6D4)),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF06B6D4),
+              ),
             ),
           ),
           child: child!,
@@ -109,13 +111,8 @@ class _AddPageState extends State<AddPage> {
     if (pickedDate != null && pickedDate != selectedDateStart) {
       setState(() {
         selectedDateStart = pickedDate;
-        _saveDateToStorage(pickedDate);
       });
     }
-  }
-
-  void _saveDateToStorage(DateTime dateToSave) {
-    final int timestamp = dateToSave.millisecondsSinceEpoch;
   }
 
   Widget _buildInputDecoration({required Widget child, required String label}) {
@@ -124,16 +121,16 @@ class _AddPageState extends State<AddPage> {
       children: [
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               colors: [Color(0xFF1E293B), Color(0xFF334155)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -143,7 +140,7 @@ class _AddPageState extends State<AddPage> {
               BoxShadow(
                 color: Colors.black.withOpacity(0.3),
                 blurRadius: 8,
-                offset: Offset(0, 4),
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -153,17 +150,113 @@ class _AddPageState extends State<AddPage> {
     );
   }
 
+  bool _validateInputs() {
+    if (controllerMedicineName.text.trim().isEmpty) {
+      _showErrorSnackBar("Please enter medicine name");
+      return false;
+    }
+    if (selectedMedicationType == null) {
+      _showErrorSnackBar("Please select medication type");
+      return false;
+    }
+    if (controllerDayCount.text.trim().isEmpty) {
+      _showErrorSnackBar("Please enter duration");
+      return false;
+    }
+    if (int.tryParse(controllerDayCount.text.trim()) == null ||
+        int.parse(controllerDayCount.text.trim()) <= 0) {
+      _showErrorSnackBar("Please enter valid duration");
+      return false;
+    }
+    if (controllerStrength.text.trim().isEmpty) {
+      _showErrorSnackBar("Please enter strength/dose");
+      return false;
+    }
+    if (selectedTime == null) {
+      _showErrorSnackBar("Please select dose time");
+      return false;
+    }
+    if (selectedDateStart == null) {
+      _showErrorSnackBar("Please select start date");
+      return false;
+    }
+    return true;
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade600,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green.shade600,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> addMed() async {
+    if (!_validateInputs()) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final duration = int.parse(controllerDayCount.text.trim());
+      final endDate = selectedDateStart!.add(Duration(days: duration));
+
+      final medicine = MedicineModel(
+        name: controllerMedicineName.text.trim(),
+        type: selectedMedicationType!,
+        duration: duration,
+        quantity: controllerStrength.text.trim(),
+        doseTime: getFormatTime(),
+        startDate: selectedDateStart!,
+        endDate: endDate,
+        notes: controllerNotes.text.trim(),
+        isActive: true,
+        userId: "123",
+        medicineDoseTimes: [getFormatTime()],
+      );
+
+      final res = await ApiService.createMedicine(medicine);
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        _showSuccessSnackBar("Medicine added successfully!");
+        if (mounted) {
+          context.go('/home');
+        }
+      } else {
+        _showErrorSnackBar("Failed to add medicine: ${res.body}");
+      }
+    } catch (e) {
+      _showErrorSnackBar("An error occurred: ${e.toString()}");
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    double sizeHeight = MediaQuery.of(context).size.height;
-    double sizeWidth = MediaQuery.of(context).size.width;
-
     return Scaffold(
-      backgroundColor: Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
-        backgroundColor: Color(0xFF1E293B),
+        backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
-        title: Text(
+        title: const Text(
           "Add Medicine",
           style: TextStyle(
             fontWeight: FontWeight.bold,
@@ -172,11 +265,11 @@ class _AddPageState extends State<AddPage> {
           ),
         ),
         centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -187,7 +280,7 @@ class _AddPageState extends State<AddPage> {
                     width: 4,
                     height: 24,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
+                      gradient: const LinearGradient(
                         colors: [Color(0xFF06B6D4), Color(0xFF8B5CF6)],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -195,8 +288,8 @@ class _AddPageState extends State<AddPage> {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  SizedBox(width: 12),
-                  Text(
+                  const SizedBox(width: 12),
+                  const Text(
                     "Medicine Details",
                     style: TextStyle(
                       fontSize: 20,
@@ -206,7 +299,7 @@ class _AddPageState extends State<AddPage> {
                   ),
                 ],
               ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
 
               // First Row - Medication Type & Day Count
               Row(
@@ -217,15 +310,15 @@ class _AddPageState extends State<AddPage> {
                       child: Theme(
                         data: Theme.of(
                           context,
-                        ).copyWith(canvasColor: Color(0xFF1E293B)),
+                        ).copyWith(canvasColor: const Color(0xFF1E293B)),
                         child: DropdownButtonFormField<String>(
                           value: selectedMedicationType,
                           hint: Text(
                             'Select Type',
                             style: TextStyle(color: Colors.grey.shade400),
                           ),
-                          dropdownColor: Color(0xFF1E293B),
-                          style: TextStyle(color: Colors.white),
+                          dropdownColor: const Color(0xFF1E293B),
+                          style: const TextStyle(color: Colors.white),
                           decoration: InputDecoration(
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -234,7 +327,7 @@ class _AddPageState extends State<AddPage> {
                             filled: true,
                             fillColor: Colors.transparent,
                           ),
-                          items: [
+                          items: const [
                             DropdownMenuItem(
                               value: 'tablet',
                               child: Text('💊 Tablet'),
@@ -265,13 +358,13 @@ class _AddPageState extends State<AddPage> {
                       ),
                     ),
                   ),
-                  SizedBox(width: 16),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: _buildInputDecoration(
                       label: "Duration (Days)",
                       child: TextField(
                         controller: controllerDayCount,
-                        style: TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Colors.white),
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                           hintText: "e.g., 7",
@@ -282,20 +375,20 @@ class _AddPageState extends State<AddPage> {
                           ),
                           filled: true,
                           fillColor: Colors.transparent,
-                          prefixIcon: Icon(
+                          prefixIcon: const Icon(
                             Icons.calendar_today,
                             color: Color(0xFF06B6D4),
                           ),
                         ),
-                        cursorColor: Color(0xFF06B6D4),
+                        cursorColor: const Color(0xFF06B6D4),
                       ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-              // Second Row - Frequency & Time
+              // Second Row - Time & Add Button
               Row(
                 children: [
                   Expanded(
@@ -308,7 +401,7 @@ class _AddPageState extends State<AddPage> {
                           onTap: () => _selectTime(context),
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
-                            padding: EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -319,13 +412,13 @@ class _AddPageState extends State<AddPage> {
                                   getFormatTime(),
                                   style: TextStyle(
                                     color:
-                                    selectedTime != null
-                                        ? Colors.white
-                                        : Colors.grey.shade400,
+                                        selectedTime != null
+                                            ? Colors.white
+                                            : Colors.grey.shade400,
                                     fontSize: 14,
                                   ),
                                 ),
-                                Icon(
+                                const Icon(
                                   Icons.access_time,
                                   color: Color(0xFF06B6D4),
                                 ),
@@ -336,12 +429,12 @@ class _AddPageState extends State<AddPage> {
                       ),
                     ),
                   ),
-                  SizedBox(width: 16),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Container(
                       height: 50,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
+                        gradient: const LinearGradient(
                           colors: [Color(0xFF10B981), Color(0xFF059669)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -349,38 +442,29 @@ class _AddPageState extends State<AddPage> {
                         borderRadius: BorderRadius.circular(25),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF10B981).withOpacity(0.3),
+                            color: const Color(0xFF10B981).withOpacity(0.3),
                             blurRadius: 8,
-                            offset: Offset(0, 4),
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          onTap: () {},
+                          onTap: () {
+                            // You can implement additional time slots here
+                          },
                           borderRadius: BorderRadius.circular(25),
                           child: Container(
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 20,
                               vertical: 12,
                             ),
-                            child: Row(
+                            child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Container(
-                                  padding: EdgeInsets.all(2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Icon(
-                                    Icons.add,
-                                    color: Colors.white,
-                                    size: 18,
-                                  ),
-                                ),
+                                Icon(Icons.add, color: Colors.white, size: 18),
                                 SizedBox(width: 8),
                                 Text(
                                   "Add",
@@ -399,9 +483,9 @@ class _AddPageState extends State<AddPage> {
                   ),
                 ],
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-              // Third Row - Duration & Strength
+              // Third Row - Start Date & Strength
               Row(
                 children: [
                   Expanded(
@@ -413,7 +497,7 @@ class _AddPageState extends State<AddPage> {
                           onTap: () => _selectDateStart(context),
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
-                            padding: EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(16),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -421,12 +505,12 @@ class _AddPageState extends State<AddPage> {
                                   getFormattedDateStart(),
                                   style: TextStyle(
                                     color:
-                                    selectedDateStart != null
-                                        ? Colors.white
-                                        : Colors.grey.shade400,
+                                        selectedDateStart != null
+                                            ? Colors.white
+                                            : Colors.grey.shade400,
                                   ),
                                 ),
-                                Icon(
+                                const Icon(
                                   Icons.date_range,
                                   color: Color(0xFF06B6D4),
                                 ),
@@ -437,13 +521,13 @@ class _AddPageState extends State<AddPage> {
                       ),
                     ),
                   ),
-                  SizedBox(width: 16),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: _buildInputDecoration(
                       label: "Strength/Dose",
                       child: TextField(
                         controller: controllerStrength,
-                        style: TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
                           hintText: "e.g., 500mg",
                           hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -453,25 +537,25 @@ class _AddPageState extends State<AddPage> {
                           ),
                           filled: true,
                           fillColor: Colors.transparent,
-                          prefixIcon: Icon(
+                          prefixIcon: const Icon(
                             Icons.medication,
                             color: Color(0xFF10B981),
                           ),
                         ),
-                        cursorColor: Color(0xFF10B981),
+                        cursorColor: const Color(0xFF10B981),
                       ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 32),
+              const SizedBox(height: 32),
 
               // Medicine Name
               _buildInputDecoration(
                 label: "Medicine Name",
                 child: TextField(
                   controller: controllerMedicineName,
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
                   decoration: InputDecoration(
                     hintText: "Enter medicine name",
                     hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -481,22 +565,22 @@ class _AddPageState extends State<AddPage> {
                     ),
                     filled: true,
                     fillColor: Colors.transparent,
-                    prefixIcon: Icon(
+                    prefixIcon: const Icon(
                       Icons.local_pharmacy,
                       color: Color(0xFF8B5CF6),
                     ),
                   ),
-                  cursorColor: Color(0xFF8B5CF6),
+                  cursorColor: const Color(0xFF8B5CF6),
                 ),
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
               // Notes
               _buildInputDecoration(
                 label: "Additional Notes",
                 child: TextField(
                   controller: controllerNotes,
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white),
                   maxLines: 3,
                   decoration: InputDecoration(
                     hintText: "Any special instructions or notes...",
@@ -508,17 +592,17 @@ class _AddPageState extends State<AddPage> {
                     filled: true,
                     fillColor: Colors.transparent,
                   ),
-                  cursorColor: Color(0xFF06B6D4),
+                  cursorColor: const Color(0xFF06B6D4),
                 ),
               ),
-              SizedBox(height: 40),
+              const SizedBox(height: 40),
 
               // Add Button
               Container(
                 width: double.infinity,
                 height: 60,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [Color(0xFF06B6D4), Color(0xFF0891B2)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -526,44 +610,49 @@ class _AddPageState extends State<AddPage> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFF06B6D4).withOpacity(0.4),
+                      color: const Color(0xFF06B6D4).withOpacity(0.4),
                       blurRadius: 15,
-                      offset: Offset(0, 8),
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: () {
-                      // Add medicine logic here
-                    },
+                    onTap: isLoading ? null : addMed,
                     borderRadius: BorderRadius.circular(20),
                     child: Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.add_circle_outline,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                          SizedBox(width: 12),
-                          Text(
-                            "Add Medicine",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                        ],
-                      ),
+                      child:
+                          isLoading
+                              ? const CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              )
+                              : const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.add_circle_outline,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text(
+                                    "Add Medicine",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                ],
+                              ),
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
             ],
           ),
         ),
