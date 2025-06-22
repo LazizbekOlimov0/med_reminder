@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../models/medication.dart';
 import '../../services/api_service.dart';
 
@@ -13,8 +15,9 @@ class _HomePageState extends State<HomePage> {
   List<MedicineModel> medicines = [];
   List<MedicineModel> filteredMedicines = [];
   bool isLoading = true;
-  String errorMessage = '';
-  TextEditingController searchController = TextEditingController();
+  bool isSearching = false;
+  final TextEditingController searchController = TextEditingController();
+  String? errorMessage;
 
   @override
   void initState() {
@@ -22,93 +25,207 @@ class _HomePageState extends State<HomePage> {
     fetchMedicines();
   }
 
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> fetchMedicines() async {
     setState(() {
       isLoading = true;
-      errorMessage = '';
+      errorMessage = null;
     });
 
     try {
       final result = await ApiService.getAllMedicines();
-      setState(() {
-        medicines = result;
-        filteredMedicines = result;
-        isLoading = false;
-      });
-
-      // Debug print to see what we got
-      print('Fetched ${result.length} medicines');
-      for (var med in result) {
-        print('Medicine: ${med.name} - ${med.quantity} ${med.type}');
+      if (mounted) {
+        setState(() {
+          medicines = result;
+          filteredMedicines = result;
+          isLoading = false;
+        });
       }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-        errorMessage = e.toString();
-      });
-      print('Error fetching medicines: $e');
-
-      // Show error to user
+      // Har qanday xatolik bo'lsa ham, bo'sh list ko'rsatamiz
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load medicines: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
+        setState(() {
+          medicines = [];
+          filteredMedicines = [];
+          isLoading = false;
+          errorMessage = null; // Xatolik xabarini ko'rsatmaymiz
+        });
       }
     }
   }
 
-  void _filterSearchResults(String query) {
+  Future<void> searchMedicines(String query) async {
     if (query.isEmpty) {
       setState(() {
         filteredMedicines = medicines;
+        isSearching = false;
       });
-    } else {
-      setState(() {
-        filteredMedicines = medicines.where((med) =>
-        med.name.toLowerCase().contains(query.toLowerCase()) ||
-            med.type.toLowerCase().contains(query.toLowerCase())).toList();
-      });
-    }
-  }
-
-  Future<void> _performSearch(String query) async {
-    if (query.trim().isEmpty) {
-      _filterSearchResults(query);
       return;
     }
 
     setState(() {
-      isLoading = true;
+      isSearching = true;
     });
 
     try {
+      // API dan qidiruv
       final searchResults = await ApiService.searchMedicines(query);
-      setState(() {
-        filteredMedicines = searchResults;
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          filteredMedicines = searchResults;
+          isSearching = false;
+        });
+      }
     } catch (e) {
-      // If search fails, fall back to local filtering
-      _filterSearchResults(query);
-      setState(() {
-        isLoading = false;
-      });
-      print('Search failed, using local filter: $e');
+      // Qidiruv xatoligida ham bo'sh natija ko'rsatamiz
+      if (mounted) {
+        setState(() {
+          filteredMedicines = [];
+          isSearching = false;
+        });
+      }
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  String _formatTime(DateTime time) {
+    return DateFormat('HH:mm').format(time);
+  }
+
+  String _getTimeOfDay(DateTime time) {
+    final hour = time.hour;
+    if (hour < 12) return 'Morning';
+    if (hour < 17) return 'Afternoon';
+    return 'Evening';
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.medication_outlined,
+            size: 80,
+            color: Colors.white30,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            searchController.text.isNotEmpty
+                ? "Dori topilmadi"
+                : "Dorilar yo'q",
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            searchController.text.isNotEmpty
+                ? "Boshqa nom bilan qidiring"
+                : "Birinchi doringizni qo'shing",
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+            ),
+          ),
+          if (searchController.text.isEmpty) ...[
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () async {
+                final result = await context.push('/add');
+                // Add page'dan qaytganda refresh qilamiz
+                if (result == true) {
+                  fetchMedicines();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF06B6D4),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Dori Qo\'shish'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 80,
+            color: Colors.red.shade300,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            errorMessage ?? 'Something went wrong',
+            style: TextStyle(
+              color: Colors.red.shade300,
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: fetchMedicines,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF06B6D4),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
-        backgroundColor: Color(0xFF1E293B),
+        backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
-        title: Text(
+        title: const Text(
           "Med Reminder",
           style: TextStyle(
             fontSize: 24,
@@ -119,285 +236,222 @@ class _HomePageState extends State<HomePage> {
         centerTitle: false,
         actions: [
           Container(
-            margin: EdgeInsets.only(right: 8),
+            margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
-              color: Color(0xFF334155),
+              color: const Color(0xFF334155),
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
               onPressed: () {
-                // Navigate to notifications page
+                // Notification page'ga o'tish
               },
-              icon: Icon(Icons.notifications_outlined, color: Colors.white),
-            ),
-          ),
-          Container(
-            margin: EdgeInsets.only(right: 16),
-            decoration: BoxDecoration(
-              color: Color(0xFF334155),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              onPressed: fetchMedicines,
-              icon: Icon(Icons.refresh, color: Colors.white),
+              icon: const Icon(Icons.notifications_outlined, color: Colors.white),
             ),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // Search Bar
-            TextField(
-              controller: searchController,
-              onChanged: _filterSearchResults,
-              onSubmitted: _performSearch,
-              style: TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: "Search medicine...",
-                hintStyle: TextStyle(color: Colors.white70),
-                prefixIcon: Icon(Icons.search, color: Colors.white70),
-                suffixIcon: searchController.text.isNotEmpty
-                    ? IconButton(
-                  onPressed: () {
-                    searchController.clear();
-                    _filterSearchResults('');
-                  },
-                  icon: Icon(Icons.clear, color: Colors.white70),
-                )
-                    : null,
-                filled: true,
-                fillColor: Color(0xFF1E293B),
-                border: OutlineInputBorder(
+      body: RefreshIndicator(
+        onRefresh: fetchMedicines,
+        color: const Color(0xFF06B6D4),
+        backgroundColor: const Color(0xFF1E293B),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              // Search Bar
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+                  border: Border.all(
+                    color: const Color(0xFF334155),
+                    width: 1,
+                  ),
+                ),
+                child: TextField(
+                  controller: searchController,
+                  onChanged: (value) {
+                    // Debounce qidiruv uchun
+                    Future.delayed(const Duration(milliseconds: 500), () {
+                      if (searchController.text == value) {
+                        searchMedicines(value);
+                      }
+                    });
+                  },
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: "Search medicines...",
+                    hintStyle: const TextStyle(color: Colors.white70),
+                    prefixIcon: isSearching
+                        ? const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Color(0xFF06B6D4),
+                        ),
+                      ),
+                    )
+                        : const Icon(Icons.search, color: Colors.white70),
+                    suffixIcon: searchController.text.isNotEmpty
+                        ? IconButton(
+                      onPressed: () {
+                        searchController.clear();
+                        setState(() {
+                          filteredMedicines = medicines;
+                        });
+                      },
+                      icon: const Icon(Icons.clear, color: Colors.white70),
+                    )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // Medicine Count
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Your Medicines",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+              // Content
+              Expanded(
+                child: isLoading
+                    ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF06B6D4),
                   ),
-                ),
-                Text(
-                  "${filteredMedicines.length} medicine${filteredMedicines.length != 1 ? 's' : ''}",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-
-            // Content Area
-            Expanded(
-              child: isLoading
-                  ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(color: Color(0xFF06B6D4)),
-                    SizedBox(height: 16),
-                    Text(
-                      "Loading medicines...",
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                  ],
-                ),
-              )
-                  : errorMessage.isNotEmpty
-                  ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      color: Colors.red,
-                      size: 64,
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      "Error loading medicines",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 32),
-                      child: Text(
-                        errorMessage,
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: fetchMedicines,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF06B6D4),
-                      ),
-                      child: Text("Retry"),
-                    ),
-                  ],
-                ),
-              )
-                  : filteredMedicines.isEmpty
-                  ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.medical_services_outlined,
-                      color: Colors.white70,
-                      size: 64,
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      searchController.text.isNotEmpty
-                          ? "No medicines found"
-                          : "No medicines yet",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 18,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      searchController.text.isNotEmpty
-                          ? "Try searching with different keywords"
-                          : "Add your first medicine to get started",
-                      style: TextStyle(
-                        color: Colors.white60,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-                  : RefreshIndicator(
-                onRefresh: fetchMedicines,
-                color: Color(0xFF06B6D4),
-                backgroundColor: Color(0xFF1E293B),
-                child: ListView.builder(
+                )
+                    : filteredMedicines.isEmpty
+                    ? _buildEmptyState()
+                    : ListView.builder(
                   itemCount: filteredMedicines.length,
                   itemBuilder: (context, index) {
                     final med = filteredMedicines[index];
                     return Container(
-                      margin: EdgeInsets.only(bottom: 16),
+                      margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF06B6D4), Color(0xFF0891B2)],
+                        gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
+                          colors: [Color(0xFF06B6D4), Color(0xFF0891B2)],
                         ),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF06B6D4).withOpacity(0.3),
+                            color: const Color(0xFF06B6D4).withOpacity(0.3),
                             blurRadius: 8,
-                            offset: Offset(0, 4),
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: ListTile(
-                        contentPadding: EdgeInsets.all(16),
-                        title: Text(
-                          med.name,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () {
+                            // Medicine detail page'ga o'tish
+                            // context.push('/medicine-detail/${med.id}');
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Row(
+                              children: [
+                                // Medicine Icon
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.medication,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+
+                                // Medicine Info
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        med.name,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        "${med.quantity} • ${med.type}",
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.8),
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.access_time,
+                                            color: Colors.white.withOpacity(0.8),
+                                            size: 16,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            "${_formatTime(med.doseTime as DateTime)} • ${_getTimeOfDay(med.doseTime as DateTime)}",
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(0.8),
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Arrow Icon
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.white.withOpacity(0.8),
+                                  size: 24,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.medical_services,
-                                  color: Colors.white70,
-                                  size: 16,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  "${med.quantity} - ${med.type}",
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.schedule,
-                                  color: Colors.white70,
-                                  size: 16,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  med.doseTime ?? "No time set",
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        trailing: Icon(
-                          Icons.chevron_right,
-                          color: Colors.white,
-                        ),
-                        onTap: () {
-                          // Navigate to medicine detail page
-                          print('Tapped medicine: ${med.name}');
-                        },
                       ),
                     );
                   },
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigate to add medicine page
-          print('Add medicine pressed');
+        onPressed: () async {
+          final result = await context.push('/add');
+          // Add page'dan qaytganda refresh qilamiz
+          if (result == true) {
+            fetchMedicines();
+          }
         },
-        backgroundColor: Color(0xFF06B6D4),
-        child: Icon(Icons.add, color: Colors.white),
+        backgroundColor: const Color(0xFF06B6D4),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+          size: 28,
+        ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    searchController.dispose();
-    super.dispose();
   }
 }
