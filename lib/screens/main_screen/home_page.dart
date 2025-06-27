@@ -47,13 +47,12 @@ class _HomePageState extends State<HomePage> {
         });
       }
     } catch (e) {
-      // Har qanday xatolik bo'lsa ham, bo'sh list ko'rsatamiz
       if (mounted) {
         setState(() {
           medicines = [];
           filteredMedicines = [];
           isLoading = false;
-          errorMessage = null; // Xatolik xabarini ko'rsatmaymiz
+          errorMessage = null;
         });
       }
     }
@@ -73,7 +72,6 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      // API dan qidiruv
       final searchResults = await ApiService.searchMedicines(query);
       if (mounted) {
         setState(() {
@@ -82,7 +80,6 @@ class _HomePageState extends State<HomePage> {
         });
       }
     } catch (e) {
-      // Qidiruv xatoligida ham bo'sh natija ko'rsatamiz
       if (mounted) {
         setState(() {
           filteredMedicines = [];
@@ -136,8 +133,8 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 16),
           Text(
             searchController.text.isNotEmpty
-                ? "Dori topilmadi"
-                : "Dorilar yo'q",
+                ? "Medical not yet"
+                : "Not medical",
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 18,
@@ -147,8 +144,8 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 8),
           Text(
             searchController.text.isNotEmpty
-                ? "Boshqa nom bilan qidiring"
-                : "Birinchi doringizni qo'shing",
+                ? "Finding other name"
+                : "Add your first medical",
             style: const TextStyle(
               color: Colors.white,
               fontSize: 14,
@@ -159,7 +156,6 @@ class _HomePageState extends State<HomePage> {
             ElevatedButton(
               onPressed: () async {
                 final result = await context.push('/add');
-                // Add page'dan qaytganda refresh qilamiz
                 if (result == true) {
                   fetchMedicines();
                 }
@@ -172,7 +168,7 @@ class _HomePageState extends State<HomePage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Dori Qo\'shish'),
+              child: const Text('Add medical'),
             ),
           ],
         ],
@@ -242,9 +238,7 @@ class _HomePageState extends State<HomePage> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              onPressed: () {
-                // Notification page'ga o'tish
-              },
+              onPressed: () {},
               icon: const Icon(Icons.notifications_outlined, color: Colors.white),
             ),
           ),
@@ -271,7 +265,6 @@ class _HomePageState extends State<HomePage> {
                 child: TextField(
                   controller: searchController,
                   onChanged: (value) {
-                    // Debounce qidiruv uchun
                     Future.delayed(const Duration(milliseconds: 500), () {
                       if (searchController.text == value) {
                         searchMedicines(value);
