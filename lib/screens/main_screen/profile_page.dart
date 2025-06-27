@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({required this.name, super.key});
@@ -14,7 +16,108 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final ImagePicker _picker = ImagePicker();
   XFile? _selectedImage;
-  Uint8List? _imageBytes; // Web uchun
+  Uint8List? _imageBytes;
+
+  // SharedPreferences keys
+  static const String _profileImageKey = 'profile_image';
+  static const String _currentMedicinesKey = 'current_medicines';
+  static const String _streakDaysKey = 'streak_days';
+  static const String _completionRateKey = 'completion_rate';
+  static const String _totalDosesKey = 'total_doses';
+  static const String _userNameKey = 'user_name';
+  static const String _isActiveKey = 'is_active';
+
+  // Profile data
+  String _userName = '';
+  bool _isActive = true;
+  int _currentMedicines = 5;
+  int _streakDays = 12;
+  int _completionRate = 87;
+  int _totalDoses = 156;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData();
+  }
+
+  // SharedPreferences ma'lumotlarini yuklash
+  Future<void> _loadProfileData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      setState(() {
+        _userName = prefs.getString(_userNameKey) ?? widget.name;
+        _isActive = prefs.getBool(_isActiveKey) ?? true;
+        _currentMedicines = prefs.getInt(_currentMedicinesKey) ?? 5;
+        _streakDays = prefs.getInt(_streakDaysKey) ?? 12;
+        _completionRate = prefs.getInt(_completionRateKey) ?? 87;
+        _totalDoses = prefs.getInt(_totalDosesKey) ?? 156;
+      });
+
+      // Profil rasmini yuklash
+      final imageString = prefs.getString(_profileImageKey);
+      if (imageString != null) {
+        setState(() {
+          _imageBytes = base64Decode(imageString);
+        });
+      }
+    } catch (e) {
+      print('Error loading profile data: $e');
+    }
+  }
+
+  // SharedPreferences ga ma'lumotlarni saqlash
+  Future<void> _saveProfileData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      await prefs.setString(_userNameKey, _userName);
+      await prefs.setBool(_isActiveKey, _isActive);
+      await prefs.setInt(_currentMedicinesKey, _currentMedicines);
+      await prefs.setInt(_streakDaysKey, _streakDays);
+      await prefs.setInt(_completionRateKey, _completionRate);
+      await prefs.setInt(_totalDosesKey, _totalDoses);
+
+      // Profil rasmini saqlash
+      if (_imageBytes != null) {
+        final imageString = base64Encode(_imageBytes!);
+        await prefs.setString(_profileImageKey, imageString);
+      }
+    } catch (e) {
+      print('Error saving profile data: $e');
+    }
+  }
+
+  // Statistikalarni yangilash
+  Future<void> _updateStats() async {
+    setState(() {
+      _currentMedicines = (_currentMedicines + 1) % 10; // Test uchun
+      _streakDays += 1;
+      _totalDoses += 1;
+      if (_completionRate < 100) _completionRate += 1;
+    });
+    await _saveProfileData();
+  }
+
+  // Profil ma'lumotlarini tozalash
+  Future<void> _clearProfileData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_profileImageKey);
+      await prefs.remove(_currentMedicinesKey);
+      await prefs.remove(_streakDaysKey);
+      await prefs.remove(_completionRateKey);
+      await prefs.remove(_totalDosesKey);
+      await prefs.remove(_userNameKey);
+      await prefs.remove(_isActiveKey);
+
+      // Ma'lumotlarni qayta yuklash
+      await _loadProfileData();
+    } catch (e) {
+      print('Error clearing profile data: $e');
+    }
+  }
 
   Future<void> _takePicture() async {
     try {
@@ -36,12 +139,26 @@ class _ProfilePageState extends State<ProfilePage> {
           _selectedImage = photo;
           _imageBytes = bytes;
         });
+
+        // Rasmni saqlash
+        await _saveProfileData();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Update profile image'),
+            backgroundColor: Colors.green.shade400,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
       }
     } catch (e) {
       print('Error picking image: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Rasm tanlashda xatolik yuz berdi'),
+          content: Text('There was an error selecting the image'),
           backgroundColor: Colors.red.shade400,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -62,11 +179,11 @@ class _ProfilePageState extends State<ProfilePage> {
             borderRadius: BorderRadius.circular(16),
           ),
           title: Text(
-            "Rasm tanlash",
+            "choose a picture",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           content: Text(
-            "Rasmni qayerdan tanlashni xohlaysiz?",
+            "Where do you want to choose the picture from?",
             style: TextStyle(color: Colors.grey.shade300),
           ),
           actions: [
@@ -76,7 +193,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 onPressed: () => Navigator.of(context).pop(ImageSource.camera),
                 icon: Icon(Icons.camera_alt, color: Color(0xFF06B6D4)),
                 label: Text(
-                  "Kamera",
+                  "Camera",
                   style: TextStyle(color: Color(0xFF06B6D4)),
                 ),
               ),
@@ -84,14 +201,14 @@ class _ProfilePageState extends State<ProfilePage> {
               onPressed: () => Navigator.of(context).pop(ImageSource.gallery),
               icon: Icon(Icons.photo_library, color: Color(0xFF8B5CF6)),
               label: Text(
-                "Galereya",
+                "Galera",
                 style: TextStyle(color: Color(0xFF8B5CF6)),
               ),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
-                "Bekor qilish",
+                "Cancel",
                 style: TextStyle(color: Colors.grey.shade400),
               ),
             ),
@@ -137,7 +254,7 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: Color(0xFF1E293B),
         elevation: 0,
         title: Text(
-          "Profil",
+          "Profile",
           style: TextStyle(
             color: Colors.white,
             fontSize: 24,
@@ -146,6 +263,13 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         centerTitle: true,
         iconTheme: IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            onPressed: _updateStats,
+            icon: Icon(Icons.refresh, color: Colors.white),
+            tooltip: "Update statistic",
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(24),
@@ -238,7 +362,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   // Name and Status
                   Text(
-                    widget.name,
+                    _userName.isEmpty ? widget.name : _userName,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -249,9 +373,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Color(0xFF10B981).withOpacity(0.2),
+                      color: (_isActive ? Color(0xFF10B981) : Color(0xFFEF4444)).withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Color(0xFF10B981), width: 1),
+                      border: Border.all(color: _isActive ? Color(0xFF10B981) : Color(0xFFEF4444), width: 1),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -260,15 +384,15 @@ class _ProfilePageState extends State<ProfilePage> {
                           width: 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: Color(0xFF10B981),
+                            color: _isActive ? Color(0xFF10B981) : Color(0xFFEF4444),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
                         SizedBox(width: 8),
                         Text(
-                          "Faol davolanish",
+                          _isActive ? "Online" : "Offline",
                           style: TextStyle(
-                            color: Color(0xFF10B981),
+                            color: _isActive ? Color(0xFF10B981) : Color(0xFFEF4444),
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
@@ -286,8 +410,8 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    title: "Joriy dorilar",
-                    value: "5",
+                    title: "current medications",
+                    value: "$_currentMedicines",
                     icon: Icons.medication,
                     color: Color(0xFF06B6D4),
                   ),
@@ -295,8 +419,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 SizedBox(width: 16),
                 Expanded(
                   child: _buildStatCard(
-                    title: "Kun ketma-ketligi",
-                    value: "12",
+                    title: "day after day",
+                    value: "$_streakDays",
                     icon: Icons.local_fire_department,
                     color: Color(0xFFEF4444),
                   ),
@@ -308,8 +432,8 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    title: "Bajarilgan",
-                    value: "87%",
+                    title: "Success",
+                    value: "$_completionRate%",
                     icon: Icons.check_circle,
                     color: Color(0xFF10B981),
                   ),
@@ -317,8 +441,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 SizedBox(width: 16),
                 Expanded(
                   child: _buildStatCard(
-                    title: "Jami dozalar",
-                    value: "156",
+                    title: "All medical",
+                    value: "$_totalDoses",
                     icon: Icons.timeline,
                     color: Color(0xFF8B5CF6),
                   ),
@@ -328,17 +452,22 @@ class _ProfilePageState extends State<ProfilePage> {
             SizedBox(height: 32),
 
             // Menu Options
-            _buildMenuSection("Hisob sozlamalari", [
+            _buildMenuSection("account settings", [
               _buildMenuItem(
                 Icons.person_outline,
-                "Profilni tahrirlash",
-                () {},
+                "Update profile",
+                _showEditProfileDialog,
               ),
-              _buildMenuItem(Icons.history, "Dorilar tarixi", () {}),
+              _buildMenuItem(Icons.history, "Archive medical", () {}),
               _buildMenuItem(
                 Icons.notifications_outlined,
-                "Bildirishnomalar",
-                () {},
+                "Notifications",
+                    () {},
+              ),
+              _buildMenuItem(
+                Icons.delete_outline,
+                "Clear data",
+                _showClearDataDialog,
               ),
             ]),
             SizedBox(height: 50),
@@ -376,7 +505,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         Icon(Icons.logout, color: Colors.white),
                         SizedBox(width: 8),
                         Text(
-                          "Chiqish",
+                          "Quite",
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -527,6 +656,150 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  void _showEditProfileDialog() {
+    final nameController = TextEditingController(text: _userName.isEmpty ? widget.name : _userName);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: Color(0xFF1E293B),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Text(
+                "Update profile",
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: "Name",
+                      labelStyle: TextStyle(color: Colors.grey.shade300),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey.shade600),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFF06B6D4)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text("Online:", style: TextStyle(color: Colors.white)),
+                      Spacer(),
+                      Switch(
+                        value: _isActive,
+                        onChanged: (value) {
+                          setDialogState(() {
+                            _isActive = value;
+                          });
+                        },
+                        activeColor: Color(0xFF10B981),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    "Cancel",
+                    style: TextStyle(color: Colors.grey.shade400),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    setState(() {
+                      _userName = nameController.text;
+                    });
+                    await _saveProfileData();
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Update Profile'),
+                        backgroundColor: Colors.green.shade400,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    "Save",
+                    style: TextStyle(color: Color(0xFF06B6D4)),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showClearDataDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Color(0xFF1E293B),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            "Clear data",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            "All saved data will be deleted. Do you want to continue?",
+            style: TextStyle(color: Colors.grey.shade300),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                "Cancel",
+                style: TextStyle(color: Colors.grey.shade400),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                await _clearProfileData();
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Clear data'),
+                    backgroundColor: Colors.orange.shade400,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                );
+              },
+              child: Text(
+                "Clear",
+                style: TextStyle(color: Color(0xFFEF4444)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showLogoutDialog() {
     showDialog(
       context: context,
@@ -537,18 +810,18 @@ class _ProfilePageState extends State<ProfilePage> {
             borderRadius: BorderRadius.circular(16),
           ),
           title: Text(
-            "Chiqish",
+            "Quite",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           content: Text(
-            "Haqiqatan ham chiqishni xohlaysizmi?",
+            "Are you sure quite?",
             style: TextStyle(color: Colors.grey.shade300),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
-                "Bekor qilish",
+                "Cancel",
                 style: TextStyle(color: Colors.grey.shade400),
               ),
             ),
@@ -558,7 +831,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 // Add logout logic here
               },
               child: Text(
-                "Chiqish",
+                "Quite",
                 style: TextStyle(color: Color(0xFFEF4444)),
               ),
             ),
